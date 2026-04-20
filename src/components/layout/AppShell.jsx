@@ -1,11 +1,26 @@
 import { NavLink, Outlet } from 'react-router-dom'
 
 const NAV_ITEMS = [
-  { to: '/revenue',    label: 'Revenue' },
-  { to: '/schedule',   label: 'Schedule' },
-  { to: '/projects',   label: 'Projects' },
-  { to: '/finance',    label: 'Finance' },
-  { to: '/benchmarks', label: 'Benchmarks' },
+  {
+    to: '/revenue', label: 'Revenue',
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 13h8V3H3v10zm10 8h8V11h-8v10zM3 21h8v-6H3v6zM13 3v6h8V3h-8z"/></svg>,
+  },
+  {
+    to: '/schedule', label: 'Schedule',
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/></svg>,
+  },
+  {
+    to: '/projects', label: 'Projects',
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 7l9-4 9 4v10l-9 4-9-4V7z"/><path d="M3 7l9 4 9-4M12 11v10"/></svg>,
+  },
+  {
+    to: '/finance', label: 'Finance',
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7H15a3.5 3.5 0 010 7H6"/></svg>,
+  },
+  {
+    to: '/benchmarks', label: 'Benchmarks',
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 20h18M6 20V10M12 20V4M18 20v-7"/></svg>,
+  },
 ]
 
 export function AppShell() {
@@ -20,25 +35,26 @@ export function AppShell() {
 
         {/* Nav */}
         <nav className="flex-1 py-3.5">
-          {NAV_ITEMS.map(({ to, label }) => (
+          {NAV_ITEMS.map(({ to, label, icon }) => (
             <NavLink
               key={to}
               to={to}
               className={({ isActive }) =>
-                `flex items-center gap-2.5 px-5 py-2.5 text-small font-medium border-l-[3px] transition-colors ${
+                `flex items-center gap-2.5 px-5 py-[9px] text-small font-medium border-l-[3px] transition-colors ${
                   isActive
-                    ? 'bg-orange/10 text-orange-light border-orange font-semibold'
-                    : 'text-white/80 border-transparent hover:text-white hover:bg-white/5'
+                    ? 'bg-[rgba(229,122,58,0.12)] text-orange-light border-orange font-semibold'
+                    : 'text-white/80 border-transparent hover:text-white hover:bg-[rgba(255,255,255,0.04)]'
                 }`
               }
             >
+              <span className="flex-shrink-0 opacity-90">{icon}</span>
               {label}
             </NavLink>
           ))}
         </nav>
 
         {/* Footer */}
-        <div className="px-5 py-3.5 border-t border-white/10 font-mono text-[11px] text-white/55">
+        <div className="px-5 py-3.5 border-t border-[rgba(255,255,255,0.08)] font-mono text-[11px] text-white/55">
           pete@twodudes.com
         </div>
       </aside>
@@ -47,12 +63,12 @@ export function AppShell() {
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top chrome (orange strip + header) */}
         <div className="td-strip" />
-        <header className="h-14 border-b border-line-soft flex items-center px-6 gap-4 flex-shrink-0">
+        <header className="h-16 border-b border-line-soft flex items-center px-6 gap-4 flex-shrink-0">
           <div className="flex-1" />
           <input
             type="search"
             placeholder="Search jobs, POs, customers…"
-            className="td-focus w-[240px] px-3 py-1.5 text-small bg-surface-muted border border-line rounded-sm text-charcoal placeholder:text-muted"
+            className="td-focus w-[240px] px-3 py-1.5 text-small bg-surface-muted border border-line-strong rounded-sm text-charcoal placeholder:text-muted"
           />
           <button className="w-8 h-8 rounded-full bg-surface-muted text-muted flex items-center justify-center">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">

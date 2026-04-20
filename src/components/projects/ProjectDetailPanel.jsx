@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { STAGE_COLORS } from './stageConfig'
+import { Badge, SectionLabel } from '../ui'
 import { fmtCurrency, fmtPct, fmtRate } from './columns/formatters'
 
 export function ProjectDetailPanel({ project, onClose }) {
@@ -12,7 +13,7 @@ export function ProjectDetailPanel({ project, onClose }) {
 
   if (!project) return null
 
-  const cfg = STAGE_COLORS[project.stage] ?? { bg: 'bg-surface-muted', text: 'text-muted' }
+  const cfg = STAGE_COLORS[project.stage] ?? { tone: 'default', dot: 'bg-muted' }
 
   return (
     <>
@@ -29,14 +30,16 @@ export function ProjectDetailPanel({ project, onClose }) {
         <div className="border-b border-line px-6 py-4 flex items-start justify-between gap-4">
           <div>
             <p className="text-xs text-muted font-mono mb-0.5">{project.po_number}</p>
-            <h2 className="font-display text-xl font-bold text-ink leading-tight">{project.job_name}</h2>
-            <span className={`inline-block mt-2 text-xs px-2 py-0.5 rounded font-medium ${cfg.bg} ${cfg.text}`}>
-              {project.stage}
-            </span>
+            <h2 className="font-display text-xl font-bold text-charcoal leading-tight">{project.job_name}</h2>
+            <div className="mt-2">
+              <Badge tone={cfg.tone} dot={cfg.dot}>
+                {project.stage}
+              </Badge>
+            </div>
           </div>
           <button
             onClick={onClose}
-            className="shrink-0 text-muted hover:text-ink text-xl leading-none mt-0.5"
+            className="shrink-0 text-muted hover:text-charcoal text-xl leading-none mt-0.5"
             aria-label="Close panel"
           >
             ✕
@@ -137,9 +140,9 @@ export function ProjectDetailPanel({ project, onClose }) {
 function Section({ title, children }) {
   return (
     <div>
-      <h3 className="text-xs font-semibold uppercase tracking-widest text-muted mb-2 border-b border-line pb-1">
-        {title}
-      </h3>
+      <div className="mb-2 border-b border-line pb-1">
+        <SectionLabel>{title}</SectionLabel>
+      </div>
       <dl className="space-y-1.5">{children}</dl>
     </div>
   )
@@ -150,7 +153,7 @@ function Row({ label, value, bold }) {
   return (
     <div className="flex justify-between gap-4 text-sm">
       <dt className="text-muted shrink-0">{label}</dt>
-      <dd className={`text-right ${bold ? 'font-semibold text-ink' : 'text-ink'}`}>{display}</dd>
+      <dd className={`text-right ${bold ? 'font-semibold text-charcoal' : 'text-charcoal'}`}>{display}</dd>
     </div>
   )
 }

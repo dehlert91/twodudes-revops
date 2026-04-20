@@ -34,6 +34,7 @@ export default {
         warning: '#E57A3A',
         error:   '#C0392B',
         info:    '#2980B9',
+        neutral: '#F4F4F4',
       },
       fontFamily: {
         // Swap src values in index.css when licensed DIN 2014 / Eames files arrive
@@ -49,6 +50,7 @@ export default {
         'h3':      ['20px', { lineHeight: '1.3', fontWeight: '600' }],
         'h2':      ['24px', { lineHeight: '1.2', fontWeight: '700' }],
         'h1':      ['32px', { lineHeight: '1.1', fontWeight: '700', letterSpacing: '-0.01em' }],
+        'data':    ['28px', { lineHeight: '1.2', fontWeight: '500', letterSpacing: '-0.01em' }],
         'display': ['44px', { lineHeight: '1',   fontWeight: '700', letterSpacing: '-0.015em' }],
       },
       spacing: {

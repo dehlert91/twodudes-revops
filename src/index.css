@@ -52,6 +52,21 @@
   --td-warning: #E57A3A;
   --td-error:   #C0392B;
   --td-info:    #2980B9;
+  --td-neutral: #F4F4F4;
+  --td-text-light: #8E8E8E;
+
+  /* Spacing */
+  --space-xs:  4px;
+  --space-sm:  8px;
+  --space-md:  16px;
+  --space-lg:  24px;
+  --space-xl:  40px;
+  --space-2xl: 64px;
+
+  /* Shadows */
+  --shadow-card:     0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-elevated: 0 4px 12px rgba(0,0,0,0.10);
+  --shadow-focus:    0 0 0 3px rgba(229,122,58,0.15);
 
   --font-display: 'Barlow', 'din-2014', 'Helvetica Neue', Arial, sans-serif;
   --font-body:    'Barlow', 'din-2014', 'Helvetica Neue', Arial, sans-serif;
@@ -93,9 +108,34 @@ html, body, #root {
 /* The brand orange strip — 6px bar for page tops. */
 .td-strip { height: 6px; background: var(--td-orange); }
 
+/* Data display — mono tabular figures at KPI size */
+.td-data {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  font-size: 28px;
+  letter-spacing: -0.01em;
+  color: var(--td-text-primary);
+}
+
 /* Focus ring */
 .td-focus:focus {
   outline: none;
   box-shadow: 0 0 0 3px rgba(229,122,58,0.15);
   border-color: var(--td-orange);
+}
+
+/* Form error states */
+.td-input-error {
+  border-color: var(--td-error) !important;
+}
+.td-error-msg {
+  font-size: 11px;
+  color: var(--td-error);
+  margin-top: 4px;
+}
+.td-help-msg {
+  font-size: 11px;
+  color: var(--td-text-muted);
+  margin-top: 4px;
 }

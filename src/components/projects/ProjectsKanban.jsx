@@ -74,7 +74,7 @@ function KanbanColumn({ column, onCardClick }) {
               backgroundColor: isWarn ? '#E57A3A' : isHot ? '#1A1A1A' : '#D4D4D4',
             }}
           />
-          <span className="text-xs font-bold text-ink tracking-wide">{column.name}</span>
+          <span className="text-xs font-bold text-charcoal tracking-wide">{column.name}</span>
           <span className="font-mono text-[11px] text-muted">{column.jobs.length}</span>
         </div>
         <span className="font-mono text-[11px] text-charcoal font-medium">
@@ -111,7 +111,7 @@ function KanbanCard({ job, isWarnColumn, onClick }) {
       <div className="font-mono text-[10px] text-muted mb-1">
         {job.po_number} · {job.segment || '—'}
       </div>
-      <div className="text-xs font-semibold text-ink leading-snug mb-2">
+      <div className="text-xs font-semibold text-charcoal leading-snug mb-2">
         {job.job_name}
       </div>
 

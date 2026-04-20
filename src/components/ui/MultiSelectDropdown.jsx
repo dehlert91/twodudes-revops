@@ -37,7 +37,7 @@ export function MultiSelectDropdown({ label, options, selected, onChange, onRemo
           className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors flex items-center gap-1 ${
             count > 0
               ? 'bg-black text-white border-black'
-              : 'bg-surface text-muted border-line hover:border-line-strong'
+              : 'bg-surface text-muted border-line-strong hover:border-charcoal'
           }`}
         >
           {label}
@@ -60,7 +60,7 @@ export function MultiSelectDropdown({ label, options, selected, onChange, onRemo
       </div>
 
       {open && (
-        <div className="absolute z-50 mt-1 w-56 bg-surface border border-line rounded-md shadow-elevated max-h-64 overflow-y-auto">
+        <div className="absolute z-50 mt-1 w-56 bg-surface border border-line-strong rounded-md shadow-elevated max-h-64 overflow-y-auto">
           {count > 0 && (
             <button
               onClick={() => onChange([])}

@@ -8,6 +8,7 @@ import {
 } from '@tanstack/react-table'
 import { allColumns } from './columns'
 import { STAGE_COLORS } from './stageConfig'
+import { Badge } from '../ui'
 import { fmtCurrency, fmtPct } from './columns/formatters'
 
 const PINNED_IDS = ['po_number', 'job_name']
@@ -128,7 +129,7 @@ export function ProjectsTable({
         row.original.job_name?.toLowerCase().includes(q)
       )
     },
-    columnResizeMode: 'onChange',
+    columnResizeMode: 'onEnd',
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -203,6 +204,9 @@ export function ProjectsTable({
     setDropTarget(null)
   }, [])
 
+  // Grab the live delta offset during a resize drag (for visual feedback only)
+  const resizingInfo = table.getState().columnSizingInfo
+
   const isPinned = (id) => PINNED_IDS.includes(id)
   const isLastPinned = (id) => id === PINNED_IDS[PINNED_IDS.length - 1]
 
@@ -216,7 +220,7 @@ export function ProjectsTable({
         >
           <thead>
             {table.getHeaderGroups().map(hg => (
-              <tr key={hg.id} className="bg-surface-subtle border-b border-line">
+              <tr key={hg.id} className="bg-surface-subtle border-b border-line-strong">
                 {hg.headers.map(header => {
                   const pinned = isPinned(header.id)
                   const lastPin = isLastPinned(header.id)
@@ -228,8 +232,8 @@ export function ProjectsTable({
                       onDragOver={e => handleDragOver(e, header.id)}
                       onDrop={e => handleDrop(e, header.id)}
                       onDragEnd={handleDragEnd}
-                      className={`relative px-3 py-2.5 text-left text-xs font-semibold text-muted uppercase tracking-wide whitespace-nowrap select-none ${
-                        header.column.getCanSort() ? 'cursor-pointer hover:text-ink' : ''
+                      className={`relative px-3 py-[10px] text-left text-[10px] font-bold text-muted uppercase tracking-[0.08em] whitespace-nowrap select-none ${
+                        header.column.getCanSort() ? 'cursor-pointer hover:text-charcoal' : ''
                       } ${pinned ? 'sticky z-20' : 'cursor-grab'} ${
                         lastPin ? 'shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]' : ''
                       } ${dropTarget === header.id ? 'border-l-2 border-l-orange' : ''}`}
@@ -250,6 +254,11 @@ export function ProjectsTable({
                         className={`absolute right-0 top-0 h-full w-4 -mr-2 cursor-col-resize select-none touch-none group/resize ${
                           header.column.getIsResizing() ? 'bg-orange/30' : ''
                         }`}
+                        style={
+                          header.column.getIsResizing()
+                            ? { transform: `translateX(${resizingInfo.deltaOffset ?? 0}px)` }
+                            : undefined
+                        }
                       >
                         <div className={`mx-auto h-full w-0.5 group-hover/resize:bg-orange ${
                           header.column.getIsResizing() ? 'bg-orange' : ''
@@ -328,7 +337,7 @@ export function ProjectsTable({
 }
 
 function MobileCard({ project, onClick }) {
-  const cfg = STAGE_COLORS[project.stage] ?? { bg: 'bg-surface-muted', text: 'text-muted' }
+  const cfg = STAGE_COLORS[project.stage] ?? { tone: 'default', dot: 'bg-muted' }
   return (
     <button
       onClick={onClick}
@@ -336,25 +345,25 @@ function MobileCard({ project, onClick }) {
     >
       <div className="flex items-start justify-between gap-2 mb-2">
         <div>
-          <p className="font-semibold text-sm text-ink">{project.po_number}</p>
+          <p className="font-semibold text-sm text-charcoal">{project.po_number}</p>
           <p className="text-sm text-charcoal leading-tight">{project.job_name}</p>
         </div>
-        <span className={`shrink-0 text-xs px-2 py-0.5 rounded font-medium ${cfg.bg} ${cfg.text}`}>
+        <Badge tone={cfg.tone} dot={cfg.dot}>
           {project.stage}
-        </span>
+        </Badge>
       </div>
       <div className="grid grid-cols-3 gap-2 text-xs text-muted mt-3">
         <div>
           <p className="uppercase tracking-wide text-[10px] mb-0.5">Revenue</p>
-          <p className="font-medium font-mono text-ink">{fmtCurrency(project.total_revenue)}</p>
+          <p className="font-medium font-mono text-charcoal">{fmtCurrency(project.total_revenue)}</p>
         </div>
         <div>
           <p className="uppercase tracking-wide text-[10px] mb-0.5">GP%</p>
-          <p className="font-medium font-mono text-ink">{fmtPct(project.est_gp_pct)}</p>
+          <p className="font-medium font-mono text-charcoal">{fmtPct(project.est_gp_pct)}</p>
         </div>
         <div>
           <p className="uppercase tracking-wide text-[10px] mb-0.5">Complete</p>
-          <p className="font-medium font-mono text-ink">{fmtPct(project.pct_complete)}</p>
+          <p className="font-medium font-mono text-charcoal">{fmtPct(project.pct_complete)}</p>
         </div>
       </div>
     </button>

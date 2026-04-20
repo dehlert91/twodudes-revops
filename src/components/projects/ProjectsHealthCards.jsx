@@ -82,7 +82,7 @@ export function ProjectsHealthCards({ data, onRowClick }) {
                 <div className="text-[11px] font-semibold text-muted uppercase tracking-wide">
                   {cfg.label}
                 </div>
-                <div className="font-mono text-xl font-medium text-ink mt-0.5">
+                <div className="font-mono text-xl font-medium text-charcoal mt-0.5">
                   {counts[key]}
                 </div>
               </div>
@@ -122,7 +122,7 @@ function HealthCard({ card, onClick }) {
       <div className="flex justify-between items-start mb-2.5">
         <div>
           <div className="font-mono text-[10px] text-muted">{card.po_number}</div>
-          <div className="text-[15px] font-bold text-ink mt-1 leading-tight">{card.job_name}</div>
+          <div className="text-[15px] font-bold text-charcoal mt-1 leading-tight">{card.job_name}</div>
           <div className="text-[11px] text-muted mt-0.5">
             {card.customer || card.company || '—'} · {card.project_manager || '—'}
           </div>
@@ -153,14 +153,14 @@ function HealthCard({ card, onClick }) {
       <div className="grid grid-cols-3 gap-2 pt-2.5 border-t border-line-soft">
         <div>
           <div className="text-[9px] text-muted uppercase tracking-wide font-semibold">Revenue</div>
-          <div className="font-mono text-[13px] text-ink font-medium mt-0.5">
+          <div className="font-mono text-[13px] text-charcoal font-medium mt-0.5">
             {fmtCurrency(card.total_revenue)}
           </div>
         </div>
         <div>
           <div className="text-[9px] text-muted uppercase tracking-wide font-semibold">GP</div>
           <div className={`font-mono text-[13px] font-medium mt-0.5 ${
-            gp < 0.25 ? 'text-error' : 'text-ink'
+            gp < 0.25 ? 'text-error' : 'text-charcoal'
           }`}>
             {gpDisplay}%
           </div>
@@ -168,7 +168,7 @@ function HealthCard({ card, onClick }) {
         <div>
           <div className="text-[9px] text-muted uppercase tracking-wide font-semibold">Due</div>
           <div className={`font-mono text-[13px] font-medium mt-0.5 ${
-            isOverdue ? 'text-[#B8561E]' : 'text-ink'
+            isOverdue ? 'text-[#B8561E]' : 'text-charcoal'
           }`}>
             {card.dueLabel}
           </div>

@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { KpiCard } from '../ui'
 import { fmtCurrency, fmtPct } from './columns/formatters'
 
 export function ProjectsKPIBar({ rows }) {
@@ -16,22 +17,15 @@ export function ProjectsKPIBar({ rows }) {
 
   if (!stats) return null
 
-  return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
-      <KPICard label="Active Jobs" value={stats.n.toLocaleString()} />
-      <KPICard label="Total Revenue" value={fmtCurrency(stats.totalRevenue)} />
-      <KPICard label="Avg GP%" value={fmtPct(stats.avgGP)} highlight={gpColor(stats.avgGP)} />
-      <KPICard label="Avg % Complete" value={fmtPct(stats.avgComplete)} />
-      <KPICard label="Total Hours" value={stats.totalHours.toLocaleString('en-US', { maximumFractionDigits: 0 })} />
-    </div>
-  )
-}
+  const gpTone = gpSubTone(stats.avgGP)
 
-function KPICard({ label, value, highlight }) {
   return (
-    <div className="bg-surface border border-line rounded-md px-4 py-3 shadow-card">
-      <p className="td-label mb-1">{label}</p>
-      <p className={`text-xl font-mono font-bold ${highlight ?? 'text-ink'}`}>{value}</p>
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-4">
+      <KpiCard label="Active Jobs" value={stats.n.toLocaleString()} />
+      <KpiCard label="Total Revenue" value={fmtCurrency(stats.totalRevenue)} />
+      <KpiCard label="Avg GP%" value={fmtPct(stats.avgGP)} subTone={gpTone} />
+      <KpiCard label="Avg % Complete" value={fmtPct(stats.avgComplete)} />
+      <KpiCard label="Total Hours" value={stats.totalHours.toLocaleString('en-US', { maximumFractionDigits: 0 })} />
     </div>
   )
 }
@@ -46,11 +40,11 @@ function avg(rows, key) {
   return valid.reduce((acc, r) => acc + Number(r[key]), 0) / valid.length
 }
 
-function gpColor(val) {
-  if (val == null) return null
+function gpSubTone(val) {
+  if (val == null) return 'muted'
   const n = Number(val)
   const pct = n > 1 ? n : n * 100
-  if (pct >= 30) return 'text-success'
-  if (pct >= 20) return 'text-orange'
-  return 'text-error'
+  if (pct >= 30) return 'success'
+  if (pct >= 20) return 'warning'
+  return 'error'
 }

@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from 'react'
+import { Button } from '../components/ui'
 import { useProjectDetails } from '../hooks/useProjectDetails'
 import { useTableViews } from '../hooks/useTableViews'
 import { ProjectsKPIBar } from '../components/projects/ProjectsKPIBar'
@@ -103,12 +104,9 @@ export function ProjectsPage() {
       <div className="p-8 text-center">
         <p className="text-error font-medium mb-2">Failed to load projects</p>
         <p className="text-sm text-muted mb-4">{error}</p>
-        <button
-          onClick={refetch}
-          className="px-4 py-2 bg-orange text-white rounded-md text-sm font-medium"
-        >
+        <Button variant="primary" size="sm" onClick={refetch}>
           Try again
-        </button>
+        </Button>
       </div>
     )
   }
@@ -116,7 +114,7 @@ export function ProjectsPage() {
   return (
     <div className="p-4 md:p-6">
       <div className="flex items-center justify-between mb-4">
-        <h1 className="font-display text-2xl font-bold text-ink">Projects</h1>
+        <h1 className="font-display text-2xl font-bold text-charcoal">Projects</h1>
         {loading && <span className="text-sm text-muted">Loading…</span>}
       </div>
 

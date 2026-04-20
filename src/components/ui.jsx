@@ -10,7 +10,7 @@
 
 // ─── Button ────────────────────────────────────────────────────────────
 export function Button({ variant = 'primary', size = 'md', className = '', children, ...props }) {
-  const base = 'inline-flex items-center justify-center font-semibold rounded-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
+  const base = 'inline-flex items-center justify-center font-semibold rounded-sm tracking-[0.02em] transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
   const sizes = {
     sm: 'px-3 py-1.5 text-[13px]',
     md: 'px-5 py-2.5 text-[15px]',
@@ -18,7 +18,7 @@ export function Button({ variant = 'primary', size = 'md', className = '', child
   const variants = {
     primary: 'bg-orange text-white hover:bg-orange-dark',
     secondary: 'bg-transparent text-orange border-[1.5px] border-orange hover:bg-orange hover:text-white',
-    ghost: 'bg-transparent text-charcoal/70 border border-line hover:bg-surface-muted',
+    ghost: 'bg-transparent text-charcoal/70 border border-line-strong hover:bg-surface-muted font-medium',
     destructive: 'bg-error text-white hover:brightness-90',
   };
   return (
@@ -29,17 +29,18 @@ export function Button({ variant = 'primary', size = 'md', className = '', child
 }
 
 // ─── Badge ─────────────────────────────────────────────────────────────
-export function Badge({ tone = 'default', children, className = '' }) {
+export function Badge({ tone = 'default', dot, children, className = '' }) {
   const tones = {
-    default: 'bg-surface-muted text-charcoal border-line',
-    primary: 'bg-orange/10 text-[#B8561E] border-orange/30',
-    success: 'bg-success/10 text-[#2E6B3F] border-success/30',
-    warning: 'bg-orange/10 text-[#B8561E] border-orange/30',
-    error:   'bg-error/10 text-[#8B2519] border-error/30',
-    info:    'bg-info/10 text-[#1F5E87] border-info/30',
+    default: 'bg-[#F4F4F4] text-charcoal border-line',
+    primary: 'bg-[rgba(229,122,58,0.12)] text-[#B8561E] border-[rgba(229,122,58,0.3)]',
+    success: 'bg-[rgba(74,140,92,0.12)] text-[#2E6B3F] border-[rgba(74,140,92,0.3)]',
+    warning: 'bg-[rgba(229,122,58,0.12)] text-[#B8561E] border-[rgba(229,122,58,0.3)]',
+    error:   'bg-[rgba(192,57,43,0.12)] text-[#8B2519] border-[rgba(192,57,43,0.3)]',
+    info:    'bg-[rgba(41,128,185,0.12)] text-[#1F5E87] border-[rgba(41,128,185,0.3)]',
   };
   return (
-    <span className={`inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.04em] px-1.5 py-0.5 rounded-[3px] border ${tones[tone]} ${className}`}>
+    <span className={`inline-flex items-center gap-[6px] text-[11px] font-semibold uppercase tracking-[0.04em] px-2 py-1 rounded-[3px] border ${tones[tone]} ${className}`}>
+      {dot && <span className={`w-1.5 h-1.5 rounded-full ${dot}`} />}
       {children}
     </span>
   );
@@ -68,18 +69,36 @@ export function SectionLabel({ children, className = '' }) {
 }
 
 // ─── KpiCard ───────────────────────────────────────────────────────────
-export function KpiCard({ label, value, sub, subTone = 'muted' }) {
+export function KpiCard({ label, value, sub, subTone = 'muted', trend, sparkData }) {
   const subColors = {
-    muted: 'text-muted',
+    muted:   'text-muted',
     warning: 'text-[#B8561E]',
     success: 'text-success',
-    error: 'text-error',
+    error:   'text-error',
   };
   return (
     <div className="bg-surface border border-line rounded-md p-[18px] shadow-card">
       <SectionLabel>{label}</SectionLabel>
-      <div className="font-mono text-[28px] font-medium text-ink mt-2 -tracking-[0.01em]">{value}</div>
-      {sub && <div className={`text-[12px] font-mono mt-1 ${subColors[subTone] || subColors.muted}`}>{sub}</div>}
+      <div className="font-mono text-[28px] font-medium text-charcoal mt-2 tracking-[-0.01em]" style={{ fontVariantNumeric: 'tabular-nums' }}>
+        {value}
+      </div>
+      {(sub || trend) && (
+        <div className="text-[12px] mt-1 flex items-center gap-[6px] text-muted">
+          {trend && <span className={`font-mono font-medium ${subColors[subTone]}`}>{trend}</span>}
+          {sub && <span>{sub}</span>}
+        </div>
+      )}
+      {sparkData && (
+        <div className="mt-[10px] h-8 flex items-end gap-[2px]">
+          {sparkData.map((pct, i) => (
+            <span
+              key={i}
+              className={`flex-1 rounded-t-[1px] ${i === sparkData.length - 1 ? 'bg-orange' : 'bg-orange-light'}`}
+              style={{ height: `${pct}%` }}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

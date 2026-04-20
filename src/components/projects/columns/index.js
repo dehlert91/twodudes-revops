@@ -16,6 +16,8 @@ export const allColumns = [
 const STANDARD_VISIBLE_IDS = [
   'po_number',
   'job_name',
+  'stage',
+  'project_manager',
   'total_revenue',
   'est_cost_at_completion',
   'est_gross_profit',
