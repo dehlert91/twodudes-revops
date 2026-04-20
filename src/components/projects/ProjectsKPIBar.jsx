@@ -29,9 +29,9 @@ export function ProjectsKPIBar({ rows }) {
 
 function KPICard({ label, value, highlight }) {
   return (
-    <div className="bg-white border border-gray-light rounded-lg px-4 py-3">
-      <p className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-1">{label}</p>
-      <p className={`text-xl font-display font-bold ${highlight ?? 'text-black'}`}>{value}</p>
+    <div className="bg-surface border border-line rounded-md px-4 py-3 shadow-card">
+      <p className="td-label mb-1">{label}</p>
+      <p className={`text-xl font-mono font-bold ${highlight ?? 'text-ink'}`}>{value}</p>
     </div>
   )
 }
@@ -50,7 +50,7 @@ function gpColor(val) {
   if (val == null) return null
   const n = Number(val)
   const pct = n > 1 ? n : n * 100
-  if (pct >= 30) return 'text-green-600'
-  if (pct >= 20) return 'text-yellow-600'
-  return 'text-red-600'
+  if (pct >= 30) return 'text-success'
+  if (pct >= 20) return 'text-orange'
+  return 'text-error'
 }

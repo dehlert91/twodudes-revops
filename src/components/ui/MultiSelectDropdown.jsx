@@ -37,7 +37,7 @@ export function MultiSelectDropdown({ label, options, selected, onChange, onRemo
           className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors flex items-center gap-1 ${
             count > 0
               ? 'bg-black text-white border-black'
-              : 'bg-white text-gray-600 border-gray-light hover:border-gray-400'
+              : 'bg-surface text-muted border-line hover:border-line-strong'
           }`}
         >
           {label}
@@ -51,7 +51,7 @@ export function MultiSelectDropdown({ label, options, selected, onChange, onRemo
         {onRemove && (
           <button
             onClick={onRemove}
-            className="px-1 py-1 text-gray-400 hover:text-gray-600 text-xs"
+            className="px-1 py-1 text-muted hover:text-charcoal text-xs"
             title={`Remove ${label} filter`}
           >
             ×
@@ -60,11 +60,11 @@ export function MultiSelectDropdown({ label, options, selected, onChange, onRemo
       </div>
 
       {open && (
-        <div className="absolute z-50 mt-1 w-56 bg-white border border-gray-light rounded-md shadow-lg max-h-64 overflow-y-auto">
+        <div className="absolute z-50 mt-1 w-56 bg-surface border border-line rounded-md shadow-elevated max-h-64 overflow-y-auto">
           {count > 0 && (
             <button
               onClick={() => onChange([])}
-              className="w-full text-left px-3 py-1.5 text-xs text-gray-400 hover:text-gray-600 border-b border-gray-light"
+              className="w-full text-left px-3 py-1.5 text-xs text-muted hover:text-charcoal border-b border-line"
             >
               Clear all
             </button>
@@ -72,7 +72,7 @@ export function MultiSelectDropdown({ label, options, selected, onChange, onRemo
           {options.map(opt => (
             <label
               key={opt}
-              className="flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-gray-50 cursor-pointer"
+              className="flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-surface-subtle cursor-pointer"
             >
               <input
                 type="checkbox"
@@ -84,7 +84,7 @@ export function MultiSelectDropdown({ label, options, selected, onChange, onRemo
             </label>
           ))}
           {options.length === 0 && (
-            <p className="px-3 py-2 text-xs text-gray-400">No options</p>
+            <p className="px-3 py-2 text-xs text-muted">No options</p>
           )}
         </div>
       )}

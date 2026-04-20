@@ -50,7 +50,7 @@ function EditableCell({ getValue, row, column, onCellEdit }) {
 
     return (
       <div
-        className="cursor-pointer border border-dashed border-gray-300 rounded px-1 -mx-1 hover:border-orange/50 hover:bg-orange/5 min-h-[1.5rem] flex items-center"
+        className="cursor-pointer border border-dashed border-line rounded px-1 -mx-1 hover:border-orange/50 hover:bg-orange/5 min-h-[1.5rem] flex items-center"
         onClick={(e) => { e.stopPropagation(); setEditing(true) }}
       >
         {rendered}
@@ -209,14 +209,14 @@ export function ProjectsTable({
   return (
     <>
       {/* Desktop table */}
-      <div className="hidden md:block overflow-x-auto border border-gray-light rounded-lg">
+      <div className="hidden md:block overflow-x-auto border border-line rounded-lg">
         <table
           className="text-sm"
           style={{ ...columnSizeVars, width: table.getTotalSize(), tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0 }}
         >
           <thead>
             {table.getHeaderGroups().map(hg => (
-              <tr key={hg.id} className="bg-gray-50 border-b border-gray-light">
+              <tr key={hg.id} className="bg-surface-subtle border-b border-line">
                 {hg.headers.map(header => {
                   const pinned = isPinned(header.id)
                   const lastPin = isLastPinned(header.id)
@@ -228,14 +228,14 @@ export function ProjectsTable({
                       onDragOver={e => handleDragOver(e, header.id)}
                       onDrop={e => handleDrop(e, header.id)}
                       onDragEnd={handleDragEnd}
-                      className={`relative px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap select-none ${
-                        header.column.getCanSort() ? 'cursor-pointer hover:text-black' : ''
+                      className={`relative px-3 py-2.5 text-left text-xs font-semibold text-muted uppercase tracking-wide whitespace-nowrap select-none ${
+                        header.column.getCanSort() ? 'cursor-pointer hover:text-ink' : ''
                       } ${pinned ? 'sticky z-20' : 'cursor-grab'} ${
                         lastPin ? 'shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]' : ''
                       } ${dropTarget === header.id ? 'border-l-2 border-l-orange' : ''}`}
                       style={{
                         width: `calc(var(--header-${header.id}-size) * 1px)`,
-                        ...(pinned ? { left: pinnedOffsets[header.id] + 'px', backgroundColor: '#f9fafb' } : {}),
+                        ...(pinned ? { left: pinnedOffsets[header.id] + 'px', backgroundColor: 'var(--td-bg-subtle)' } : {}),
                       }}
                     >
                       <span onClick={header.column.getToggleSortingHandler()}>
@@ -264,7 +264,7 @@ export function ProjectsTable({
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={100} className="text-center py-12 text-gray-400">
+                <td colSpan={100} className="text-center py-12 text-muted">
                   No projects match your filters.
                 </td>
               </tr>
@@ -273,7 +273,9 @@ export function ProjectsTable({
                 <tr
                   key={row.id}
                   onClick={() => onRowClick(row.original)}
-                  className="border-b border-gray-light hover:bg-orange/5 cursor-pointer transition-colors group"
+                  className={`border-b border-line hover:bg-orange/5 cursor-pointer transition-colors group ${
+                    row.index % 2 === 1 ? 'bg-surface-muted' : ''
+                  }`}
                 >
                   {row.getVisibleCells().map(cell => {
                     const pinned = isPinned(cell.column.id)
@@ -285,7 +287,7 @@ export function ProjectsTable({
                         key={cell.id}
                         style={{
                           width: `calc(var(--col-${cell.column.id}-size) * 1px)`,
-                          ...(pinned ? { left: pinnedOffsets[cell.column.id] + 'px', backgroundColor: 'white' } : {}),
+                          ...(pinned ? { left: pinnedOffsets[cell.column.id] + 'px', backgroundColor: 'var(--td-bg)' } : {}),
                         }}
                         className={`px-3 py-2.5 whitespace-nowrap overflow-hidden text-ellipsis ${
                           pinned ? 'sticky z-20' : ''
@@ -314,45 +316,45 @@ export function ProjectsTable({
       {/* Mobile card list */}
       <div className="md:hidden flex flex-col gap-3">
         {rows.length === 0 ? (
-          <p className="text-center py-12 text-gray-400">No projects match your filters.</p>
+          <p className="text-center py-12 text-muted">No projects match your filters.</p>
         ) : (
           rows.map(row => <MobileCard key={row.id} project={row.original} onClick={() => onRowClick(row.original)} />)
         )}
       </div>
 
-      <p className="text-xs text-gray-400 mt-2">{rows.length} project{rows.length !== 1 ? 's' : ''}</p>
+      <p className="text-xs text-muted mt-2">{rows.length} project{rows.length !== 1 ? 's' : ''}</p>
     </>
   )
 }
 
 function MobileCard({ project, onClick }) {
-  const cfg = STAGE_COLORS[project.stage] ?? { bg: 'bg-gray-100', text: 'text-gray-600' }
+  const cfg = STAGE_COLORS[project.stage] ?? { bg: 'bg-surface-muted', text: 'text-muted' }
   return (
     <button
       onClick={onClick}
-      className="w-full text-left border border-gray-light rounded-lg p-4 hover:border-orange transition-colors"
+      className="w-full text-left border border-line rounded-lg p-4 hover:border-orange transition-colors"
     >
       <div className="flex items-start justify-between gap-2 mb-2">
         <div>
-          <p className="font-semibold text-sm text-black">{project.po_number}</p>
-          <p className="text-sm text-gray-700 leading-tight">{project.job_name}</p>
+          <p className="font-semibold text-sm text-ink">{project.po_number}</p>
+          <p className="text-sm text-charcoal leading-tight">{project.job_name}</p>
         </div>
         <span className={`shrink-0 text-xs px-2 py-0.5 rounded font-medium ${cfg.bg} ${cfg.text}`}>
           {project.stage}
         </span>
       </div>
-      <div className="grid grid-cols-3 gap-2 text-xs text-gray-500 mt-3">
+      <div className="grid grid-cols-3 gap-2 text-xs text-muted mt-3">
         <div>
           <p className="uppercase tracking-wide text-[10px] mb-0.5">Revenue</p>
-          <p className="font-medium text-black">{fmtCurrency(project.total_revenue)}</p>
+          <p className="font-medium font-mono text-ink">{fmtCurrency(project.total_revenue)}</p>
         </div>
         <div>
           <p className="uppercase tracking-wide text-[10px] mb-0.5">GP%</p>
-          <p className="font-medium text-black">{fmtPct(project.est_gp_pct)}</p>
+          <p className="font-medium font-mono text-ink">{fmtPct(project.est_gp_pct)}</p>
         </div>
         <div>
           <p className="uppercase tracking-wide text-[10px] mb-0.5">Complete</p>
-          <p className="font-medium text-black">{fmtPct(project.pct_complete)}</p>
+          <p className="font-medium font-mono text-ink">{fmtPct(project.pct_complete)}</p>
         </div>
       </div>
     </button>

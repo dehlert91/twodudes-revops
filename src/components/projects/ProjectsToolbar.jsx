@@ -10,6 +10,12 @@ const OPTIONAL_FILTERS = [
   { key: 'teamLeader', label: 'Team Leader' },
 ]
 
+const VIEW_MODES = [
+  { key: 'list', label: 'List' },
+  { key: 'board', label: 'Board' },
+  { key: 'cards', label: 'Cards' },
+]
+
 export function ProjectsToolbar({
   globalFilter, onGlobalFilter,
   stageFilter, onStageFilter,
@@ -23,6 +29,8 @@ export function ProjectsToolbar({
   // View props
   activeViewName, viewNames, onLoadView, onSaveView, onDeleteView,
   onRefresh, loading,
+  // View mode
+  viewMode = 'list', onViewModeChange,
 }) {
   const [activeOptional, setActiveOptional] = useState([])
   const [addMenuOpen, setAddMenuOpen] = useState(false)
@@ -86,14 +94,14 @@ export function ProjectsToolbar({
           placeholder="Search PO or job name…"
           value={globalFilter}
           onChange={e => onGlobalFilter(e.target.value)}
-          className="flex-1 border border-gray-light rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent"
+          className="flex-1 border border-line rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent"
         />
 
         {/* View selector */}
         <div ref={viewRef} className="relative">
           <button
             onClick={() => { setViewMenuOpen(o => !o); setSavingAs(false) }}
-            className="px-3 py-2 border border-gray-light rounded-md text-sm text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-1.5"
+            className="px-3 py-2 border border-line rounded-md text-sm text-muted hover:bg-surface-subtle transition-colors flex items-center gap-1.5"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
@@ -101,12 +109,12 @@ export function ProjectsToolbar({
             {activeViewName}
           </button>
           {viewMenuOpen && (
-            <div className="absolute right-0 z-50 mt-1 w-56 bg-white border border-gray-light rounded-md shadow-lg">
+            <div className="absolute right-0 z-50 mt-1 w-56 bg-surface border border-line rounded-md shadow-elevated">
               {viewNames.map(name => (
                 <div key={name} className="flex items-center justify-between group">
                   <button
                     onClick={() => { onLoadView(name); setViewMenuOpen(false) }}
-                    className={`flex-1 text-left px-3 py-2 text-sm hover:bg-gray-50 ${
+                    className={`flex-1 text-left px-3 py-2 text-sm hover:bg-surface-subtle ${
                       name === activeViewName ? 'font-medium text-orange' : ''
                     }`}
                   >
@@ -115,14 +123,14 @@ export function ProjectsToolbar({
                   {name !== 'Standard' && (
                     <button
                       onClick={() => onDeleteView(name)}
-                      className="px-2 py-2 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity text-xs"
+                      className="px-2 py-2 text-muted hover:text-error opacity-0 group-hover:opacity-100 transition-opacity text-xs"
                     >
                       ✕
                     </button>
                   )}
                 </div>
               ))}
-              <div className="border-t border-gray-light">
+              <div className="border-t border-line">
                 {savingAs ? (
                   <div className="flex items-center gap-1 p-2">
                     <input
@@ -132,7 +140,7 @@ export function ProjectsToolbar({
                       onChange={e => setNewViewName(e.target.value)}
                       onKeyDown={e => { if (e.key === 'Enter') handleSaveView(); if (e.key === 'Escape') setSavingAs(false) }}
                       placeholder="View name…"
-                      className="flex-1 px-2 py-1 text-sm border border-gray-light rounded focus:outline-none focus:ring-1 focus:ring-orange"
+                      className="flex-1 px-2 py-1 text-sm border border-line rounded focus:outline-none focus:ring-1 focus:ring-orange"
                     />
                     <button
                       onClick={handleSaveView}
@@ -144,7 +152,7 @@ export function ProjectsToolbar({
                 ) : (
                   <button
                     onClick={() => setSavingAs(true)}
-                    className="w-full text-left px-3 py-2 text-sm text-gray-500 hover:bg-gray-50"
+                    className="w-full text-left px-3 py-2 text-sm text-muted hover:bg-surface-subtle"
                   >
                     Save current as…
                   </button>
@@ -154,10 +162,29 @@ export function ProjectsToolbar({
           )}
         </div>
 
+        {/* View mode toggle: List / Board / Cards */}
+        {onViewModeChange && (
+          <div className="flex rounded-md border border-line overflow-hidden">
+            {VIEW_MODES.map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => onViewModeChange(key)}
+                className={`px-3 py-2 text-xs font-medium transition-colors ${
+                  viewMode === key
+                    ? 'bg-surface-muted text-ink font-semibold'
+                    : 'text-muted hover:bg-surface-subtle'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
+
         <button
           onClick={onRefresh}
           disabled={loading}
-          className="px-3 py-2 border border-gray-light rounded-md text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+          className="px-3 py-2 border border-line rounded-md text-sm text-muted hover:bg-surface-subtle disabled:opacity-50 transition-colors"
         >
           {loading ? 'Loading…' : '↻ Refresh'}
         </button>
@@ -210,17 +237,17 @@ export function ProjectsToolbar({
           <div ref={addRef} className="relative">
             <button
               onClick={() => setAddMenuOpen(o => !o)}
-              className="px-2.5 py-1 rounded text-xs font-medium border border-dashed border-gray-300 text-gray-500 hover:border-gray-400 hover:text-gray-700 transition-colors"
+              className="px-2.5 py-1 rounded text-xs font-medium border border-dashed border-line text-muted hover:border-line-strong hover:text-charcoal transition-colors"
             >
               + Add Filter
             </button>
             {addMenuOpen && (
-              <div className="absolute z-50 mt-1 w-40 bg-white border border-gray-light rounded-md shadow-lg">
+              <div className="absolute z-50 mt-1 w-40 bg-surface border border-line rounded-md shadow-elevated">
                 {availableOptional.map(f => (
                   <button
                     key={f.key}
                     onClick={() => addOptionalFilter(f.key)}
-                    className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50"
+                    className="w-full text-left px-3 py-1.5 text-xs hover:bg-surface-subtle"
                   >
                     {f.label}
                   </button>

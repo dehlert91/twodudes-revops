@@ -11,7 +11,7 @@ export const profitColumns = [
       if (val == null) return '—'
       const n = Number(val)
       return (
-        <span className={n >= 0 ? '' : 'text-red-600'}>
+        <span className={`font-mono ${n >= 0 ? '' : 'text-error'}`}>
           {fmtCurrency(val)}
         </span>
       )
@@ -27,7 +27,7 @@ export const profitColumns = [
       if (val == null) return '—'
       const n = Number(val)
       return (
-        <span className={n >= 0.3 ? 'text-green-600' : n >= 0.2 ? 'text-yellow-600' : 'text-red-600'}>
+        <span className={`font-mono ${n >= 0.3 ? 'text-success' : n >= 0.2 ? 'text-orange' : 'text-error'}`}>
           {fmtPct(val)}
         </span>
       )
@@ -38,7 +38,7 @@ export const profitColumns = [
     accessorKey: 'est_gp_per_hour',
     header: 'GP $/hr',
     size: 100,
-    cell: ({ getValue }) => fmtCurrency(getValue()),
+    cell: ({ getValue }) => <span className="font-mono">{fmtCurrency(getValue())}</span>,
   },
   {
     id: 'forecasted_gp',
@@ -46,27 +46,27 @@ export const profitColumns = [
     header: 'Forecasted GP',
     size: 130,
     meta: { editable: true, inputType: 'number' },
-    cell: ({ getValue }) => fmtCurrency(getValue()),
+    cell: ({ getValue }) => <span className="font-mono">{fmtCurrency(getValue())}</span>,
   },
   {
     id: 'amount_billed_to_date',
     accessorKey: 'amount_billed_to_date',
     header: 'Billed to Date',
     size: 130,
-    cell: ({ getValue }) => fmtCurrency(getValue()),
+    cell: ({ getValue }) => <span className="font-mono">{fmtCurrency(getValue())}</span>,
   },
   {
     id: 'wip_to_date',
     accessorKey: 'wip_to_date',
     header: 'WIP',
     size: 110,
-    cell: ({ getValue }) => fmtCurrency(getValue()),
+    cell: ({ getValue }) => <span className="font-mono">{fmtCurrency(getValue())}</span>,
   },
   {
     id: 'revenue_earned',
     accessorKey: 'revenue_earned',
     header: 'Revenue Earned',
     size: 140,
-    cell: ({ getValue }) => fmtCurrency(getValue()),
+    cell: ({ getValue }) => <span className="font-mono">{fmtCurrency(getValue())}</span>,
   },
 ]

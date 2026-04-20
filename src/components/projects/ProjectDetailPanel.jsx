@@ -12,7 +12,7 @@ export function ProjectDetailPanel({ project, onClose }) {
 
   if (!project) return null
 
-  const cfg = STAGE_COLORS[project.stage] ?? { bg: 'bg-gray-100', text: 'text-gray-600' }
+  const cfg = STAGE_COLORS[project.stage] ?? { bg: 'bg-surface-muted', text: 'text-muted' }
 
   return (
     <>
@@ -24,19 +24,19 @@ export function ProjectDetailPanel({ project, onClose }) {
       />
 
       {/* Panel */}
-      <div className="fixed right-0 top-0 h-full w-full max-w-xl bg-white z-50 shadow-xl overflow-y-auto flex flex-col">
+      <div className="fixed right-0 top-0 h-full w-full max-w-xl bg-surface z-50 shadow-elevated overflow-y-auto flex flex-col">
         {/* Header */}
-        <div className="border-b border-gray-light px-6 py-4 flex items-start justify-between gap-4">
+        <div className="border-b border-line px-6 py-4 flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs text-gray-500 mb-0.5">{project.po_number}</p>
-            <h2 className="font-display text-xl font-bold text-black leading-tight">{project.job_name}</h2>
+            <p className="text-xs text-muted font-mono mb-0.5">{project.po_number}</p>
+            <h2 className="font-display text-xl font-bold text-ink leading-tight">{project.job_name}</h2>
             <span className={`inline-block mt-2 text-xs px-2 py-0.5 rounded font-medium ${cfg.bg} ${cfg.text}`}>
               {project.stage}
             </span>
           </div>
           <button
             onClick={onClose}
-            className="shrink-0 text-gray-400 hover:text-black text-xl leading-none mt-0.5"
+            className="shrink-0 text-muted hover:text-ink text-xl leading-none mt-0.5"
             aria-label="Close panel"
           >
             ✕
@@ -137,7 +137,7 @@ export function ProjectDetailPanel({ project, onClose }) {
 function Section({ title, children }) {
   return (
     <div>
-      <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2 border-b border-gray-light pb-1">
+      <h3 className="text-xs font-semibold uppercase tracking-widest text-muted mb-2 border-b border-line pb-1">
         {title}
       </h3>
       <dl className="space-y-1.5">{children}</dl>
@@ -149,8 +149,8 @@ function Row({ label, value, bold }) {
   const display = value == null || value === '' ? '—' : String(value)
   return (
     <div className="flex justify-between gap-4 text-sm">
-      <dt className="text-gray-500 shrink-0">{label}</dt>
-      <dd className={`text-right ${bold ? 'font-semibold text-black' : 'text-black'}`}>{display}</dd>
+      <dt className="text-muted shrink-0">{label}</dt>
+      <dd className={`text-right ${bold ? 'font-semibold text-ink' : 'text-ink'}`}>{display}</dd>
     </div>
   )
 }

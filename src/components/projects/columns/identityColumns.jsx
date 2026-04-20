@@ -8,7 +8,7 @@ export const identityColumns = [
     size: 110,
     enableHiding: false, // always visible — it's the universal key
     cell: ({ getValue }) => (
-      <span className="font-semibold text-black">{getValue()}</span>
+      <span className="font-mono font-semibold text-ink">{getValue()}</span>
     ),
   },
   {
@@ -25,7 +25,7 @@ export const identityColumns = [
     size: 160,
     cell: ({ getValue }) => {
       const stage = getValue()
-      const cfg = STAGE_COLORS[stage] ?? { bg: 'bg-gray-100', text: 'text-gray-600' }
+      const cfg = STAGE_COLORS[stage] ?? { bg: 'bg-surface-muted', text: 'text-muted' }
       return (
         <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${cfg.bg} ${cfg.text}`}>
           {stage ?? '—'}

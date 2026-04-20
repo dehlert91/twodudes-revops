@@ -4,6 +4,8 @@ import { useTableViews } from '../hooks/useTableViews'
 import { ProjectsKPIBar } from '../components/projects/ProjectsKPIBar'
 import { ProjectsToolbar } from '../components/projects/ProjectsToolbar'
 import { ProjectsTable } from '../components/projects/ProjectsTable'
+import { ProjectsKanban } from '../components/projects/ProjectsKanban'
+import { ProjectsHealthCards } from '../components/projects/ProjectsHealthCards'
 import { ProjectDetailPanel } from '../components/projects/ProjectDetailPanel'
 import { updateProject } from '../lib/supabase'
 
@@ -39,6 +41,9 @@ export function ProjectsPage() {
 
   // Selected project for detail panel
   const [selectedProject, setSelectedProject] = useState(null)
+
+  // View mode: 'list' | 'board' | 'cards'
+  const [viewMode, setViewMode] = useState('list')
 
   // Edit error toast state
   const [editError, setEditError] = useState(null)
@@ -96,8 +101,8 @@ export function ProjectsPage() {
   if (error) {
     return (
       <div className="p-8 text-center">
-        <p className="text-red-600 font-medium mb-2">Failed to load projects</p>
-        <p className="text-sm text-gray-500 mb-4">{error}</p>
+        <p className="text-error font-medium mb-2">Failed to load projects</p>
+        <p className="text-sm text-muted mb-4">{error}</p>
         <button
           onClick={refetch}
           className="px-4 py-2 bg-orange text-white rounded-md text-sm font-medium"
@@ -111,8 +116,8 @@ export function ProjectsPage() {
   return (
     <div className="p-4 md:p-6">
       <div className="flex items-center justify-between mb-4">
-        <h1 className="font-display text-2xl font-bold text-black">Projects</h1>
-        {loading && <span className="text-sm text-gray-400">Loading…</span>}
+        <h1 className="font-display text-2xl font-bold text-ink">Projects</h1>
+        {loading && <span className="text-sm text-muted">Loading…</span>}
       </div>
 
       <ProjectsKPIBar rows={filteredForKPI} />
@@ -146,26 +151,44 @@ export function ProjectsPage() {
         onDeleteView={deleteView}
         onRefresh={refetch}
         loading={loading}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
       />
 
-      <ProjectsTable
-        data={data}
-        globalFilter={globalFilter}
-        stageFilter={stageFilter}
-        segmentFilter={segmentFilter}
-        pmFilter={pmFilter}
-        salesRepFilter={salesRepFilter}
-        companyFilter={companyFilter}
-        customerFilter={customerFilter}
-        teamLeaderFilter={teamLeaderFilter}
-        columnVisibility={columnVisibility}
-        columnOrder={columnOrder}
-        columnSizing={columnSizing}
-        onColumnSizingChange={setColumnSizing}
-        onColumnOrderChange={setColumnOrder}
-        onRowClick={setSelectedProject}
-        onCellEdit={handleCellEdit}
-      />
+      {viewMode === 'list' && (
+        <ProjectsTable
+          data={data}
+          globalFilter={globalFilter}
+          stageFilter={stageFilter}
+          segmentFilter={segmentFilter}
+          pmFilter={pmFilter}
+          salesRepFilter={salesRepFilter}
+          companyFilter={companyFilter}
+          customerFilter={customerFilter}
+          teamLeaderFilter={teamLeaderFilter}
+          columnVisibility={columnVisibility}
+          columnOrder={columnOrder}
+          columnSizing={columnSizing}
+          onColumnSizingChange={setColumnSizing}
+          onColumnOrderChange={setColumnOrder}
+          onRowClick={setSelectedProject}
+          onCellEdit={handleCellEdit}
+        />
+      )}
+
+      {viewMode === 'board' && (
+        <ProjectsKanban
+          data={filteredForKPI}
+          onRowClick={setSelectedProject}
+        />
+      )}
+
+      {viewMode === 'cards' && (
+        <ProjectsHealthCards
+          data={filteredForKPI}
+          onRowClick={setSelectedProject}
+        />
+      )}
 
       {selectedProject && (
         <ProjectDetailPanel
@@ -176,7 +199,7 @@ export function ProjectsPage() {
 
       {/* Edit error toast */}
       {editError && (
-        <div className="fixed bottom-4 right-4 bg-red-600 text-white px-4 py-2 rounded-lg shadow-lg text-sm z-50">
+        <div className="fixed bottom-4 right-4 bg-error text-white px-4 py-2 rounded-lg shadow-elevated text-sm z-50">
           {editError}
         </div>
       )}

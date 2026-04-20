@@ -1,34 +1,101 @@
-@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Playfair+Display:wght@700&display=swap');
+/* ============================================================
+   Two Dudes Design System — index.css
+   ============================================================ */
+
+/* ---------- Fonts ----------
+   Current: Google Fonts substitutes (Barlow + DM Mono).
+   When licensed DIN 2014 files arrive, replace the @import with
+   @font-face blocks pointing to local .woff2 files in public/fonts/.
+*/
+@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    /* Brand tokens — swap src values in @font-face below when real fonts arrive */
-    --font-display: 'Playfair Display', Georgia, serif;  /* → Eames Century Modern Bold */
-    --font-body: 'Barlow', 'Arial', sans-serif;          /* → DIN 2014 */
-    --color-orange: #E57A3A;
-    --color-black: #000000;
-    --color-gray-light: #D9D8D6;
-  }
+/* Example @font-face swap (uncomment when DIN 2014 .woff2 is in public/fonts/):
+@font-face {
+  font-family: 'din-2014';
+  src: url('/fonts/DIN2014-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'din-2014';
+  src: url('/fonts/DIN2014-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-display: swap;
+}
+*/
 
-  *, *::before, *::after {
-    box-sizing: border-box;
-  }
+/* ---------- Base CSS Variables ---------- */
+:root {
+  --td-orange:        #E57A3A;
+  --td-orange-dark:   #C4622A;
+  --td-orange-light:  #F0A882;
 
-  html, body, #root {
-    height: 100%;
-    margin: 0;
-    padding: 0;
-  }
+  --td-text-primary:   #434343;
+  --td-text-secondary: #666666;
+  --td-text-muted:     #8E8E8E;
+  --td-text-inverse:   #FFFFFF;
 
-  body {
-    font-family: var(--font-body);
-    background-color: #ffffff;
-    color: var(--color-black);
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
+  --td-bg:         #FFFFFF;
+  --td-bg-subtle:  #F8F8F8;
+  --td-bg-muted:   #F4F4F4;
+  --td-bg-dark:    #434343;
+  --td-bg-darker:  #222222;
+
+  --td-border:        #E0E0E0;
+  --td-border-strong: #CCCCCC;
+
+  --td-success: #4A8C5C;
+  --td-warning: #E57A3A;
+  --td-error:   #C0392B;
+  --td-info:    #2980B9;
+
+  --font-display: 'Barlow', 'din-2014', 'Helvetica Neue', Arial, sans-serif;
+  --font-body:    'Barlow', 'din-2014', 'Helvetica Neue', Arial, sans-serif;
+  --font-mono:    'DM Mono', 'Courier New', ui-monospace, monospace;
+}
+
+/* ---------- Base ---------- */
+html, body {
+  font-family: var(--font-body);
+  color: var(--td-text-primary);
+  background: var(--td-bg);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* Tabular figures on all mono by default — essential for data alignment. */
+.font-mono { font-variant-numeric: tabular-nums; }
+
+/* ---------- Utility classes ---------- */
+.td-label {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--td-text-secondary);
+}
+
+/* The brand orange strip — 6px bar for page tops. */
+.td-strip { height: 6px; background: var(--td-orange); }
+
+/* Focus ring */
+.td-focus:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(229,122,58,0.15);
+  border-color: var(--td-orange);
 }

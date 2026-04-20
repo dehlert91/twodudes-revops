@@ -1,7 +1,7 @@
 import { identityColumns } from './identityColumns.jsx'
 import { revenueColumns } from './revenueColumns.jsx'
 import { progressColumns } from './progressColumns.jsx'
-import { costColumns } from './costColumns'
+import { costColumns } from './costColumns.jsx'
 import { profitColumns } from './profitColumns.jsx'
 
 export const allColumns = [
