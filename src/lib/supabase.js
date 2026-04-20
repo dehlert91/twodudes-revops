@@ -25,10 +25,19 @@ export async function withRetry(fn, retries = 3, delayMs = 1500) {
 }
 
 export async function updateProject(po_number, field, value) {
-  return withRetry(() =>
+  const result = await withRetry(() =>
     supabase
       .from('projects')
       .update({ [field]: value })
       .eq('po_number', po_number)
+      .select()
   )
+
+  // .update() returns success even if 0 rows matched — treat that as an error
+  if (!result.error && result.data?.length === 0) {
+    console.warn(`updateProject: 0 rows matched for po_number="${po_number}", field="${field}"`)
+    return { error: { message: `No project found with PO# ${po_number}` } }
+  }
+
+  return result
 }

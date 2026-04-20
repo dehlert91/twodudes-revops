@@ -10,9 +10,7 @@ export function fmtCurrency(val) {
 export function fmtPct(val) {
   if (val == null) return '—'
   const n = Number(val)
-  // Values > 1 are already percentages (e.g. 42.5), values ≤ 1 are decimals (e.g. 0.425)
-  const display = n > 1 ? n : n * 100
-  return display.toFixed(1) + '%'
+  return (n * 100).toFixed(1) + '%'
 }
 
 export function fmtRate(val) {
