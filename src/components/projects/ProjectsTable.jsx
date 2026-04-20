@@ -137,7 +137,8 @@ export function ProjectsTable({
 
   const rows = table.getRowModel().rows
 
-  // Compute pinned column left offsets
+  // Compute pinned column left offsets (only recalc when sizing finalizes)
+  const columnSizingState = table.getState().columnSizing
   const pinnedOffsets = useMemo(() => {
     const offsets = {}
     let cumulative = 0
@@ -148,9 +149,9 @@ export function ProjectsTable({
     }
     return offsets
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [table.getState().columnSizing, table.getState().columnSizingInfo])
+  }, [columnSizingState])
 
-  // CSS-variable-driven sizing
+  // CSS-variable-driven sizing (only recalc when sizing finalizes)
   const columnSizeVars = useMemo(() => {
     const headers = table.getFlatHeaders()
     const vars = {}
@@ -160,7 +161,7 @@ export function ProjectsTable({
     }
     return vars
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [table.getState().columnSizingInfo, table.getState().columnSizing])
+  }, [columnSizingState])
 
   // Drag and drop handlers for column reordering
   const handleDragStart = useCallback((e, headerId) => {
@@ -203,9 +204,6 @@ export function ProjectsTable({
     setDraggedCol(null)
     setDropTarget(null)
   }, [])
-
-  // Grab the live delta offset during a resize drag (for visual feedback only)
-  const resizingInfo = table.getState().columnSizingInfo
 
   const isPinned = (id) => PINNED_IDS.includes(id)
   const isLastPinned = (id) => id === PINNED_IDS[PINNED_IDS.length - 1]
@@ -254,11 +252,6 @@ export function ProjectsTable({
                         className={`absolute right-0 top-0 h-full w-4 -mr-2 cursor-col-resize select-none touch-none group/resize ${
                           header.column.getIsResizing() ? 'bg-orange/30' : ''
                         }`}
-                        style={
-                          header.column.getIsResizing()
-                            ? { transform: `translateX(${resizingInfo.deltaOffset ?? 0}px)` }
-                            : undefined
-                        }
                       >
                         <div className={`mx-auto h-full w-0.5 group-hover/resize:bg-orange ${
                           header.column.getIsResizing() ? 'bg-orange' : ''
