@@ -269,7 +269,7 @@ export function ProjectsTable({
                       onDragOver={e => handleDragOver(e, header.id)}
                       onDrop={e => handleDrop(e, header.id)}
                       onDragEnd={handleDragEnd}
-                      className={`relative px-3 py-[10px] text-left text-[10px] font-bold text-muted uppercase tracking-[0.08em] whitespace-nowrap select-none ${
+                      className={`relative px-3 py-[10px] text-left text-[10px] font-bold text-muted uppercase tracking-[0.08em] whitespace-nowrap overflow-hidden text-ellipsis select-none ${
                         header.column.getCanSort() ? 'cursor-pointer hover:text-charcoal' : ''
                       } ${pinned ? 'sticky z-20' : 'cursor-grab'} ${
                         lastPin ? 'shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]' : ''
