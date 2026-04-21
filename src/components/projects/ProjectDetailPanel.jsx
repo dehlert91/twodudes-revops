@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { STAGE_COLORS } from './stageConfig'
+import { STAGE_COLORS, PROJECT_STATUS_COLORS } from './stageConfig'
 import { Badge, SectionLabel } from '../ui'
 import { fmtCurrency, fmtPct, fmtRate } from './columns/formatters'
 
@@ -31,10 +31,14 @@ export function ProjectDetailPanel({ project, onClose }) {
           <div>
             <p className="text-xs text-muted font-mono mb-0.5">{project.po_number}</p>
             <h2 className="font-display text-xl font-bold text-charcoal leading-tight">{project.job_name}</h2>
-            <div className="mt-2">
+            <div className="mt-2 flex items-center gap-2">
               <Badge tone={cfg.tone} dot={cfg.dot}>
                 {project.stage}
               </Badge>
+              {project.project_status && (() => {
+                const statusCfg = PROJECT_STATUS_COLORS[project.project_status] ?? { tone: 'default' }
+                return <Badge tone={statusCfg.tone}>{project.project_status}</Badge>
+              })()}
             </div>
           </div>
           <button
@@ -100,6 +104,9 @@ export function ProjectDetailPanel({ project, onClose }) {
             <Row label="Total Cost to Date" value={fmtCurrency(project.total_cost_to_date)} bold />
             <Row label="Est. Total Remaining" value={fmtCurrency(project.est_total_remaining_cost)} />
             <Row label="Est. Cost at Completion" value={fmtCurrency(project.est_cost_at_completion)} bold />
+            <Row label="Forecasted Hours" value={project.forecasted_hours != null ? Number(project.forecasted_hours).toLocaleString('en-US', { maximumFractionDigits: 1 }) : null} />
+            <Row label="Forecasted Materials" value={fmtCurrency(project.forecasted_materials)} />
+            <Row label="Forecasted SET" value={fmtCurrency(project.forecasted_set)} />
             <Row label="Labor % of Revenue" value={fmtPct(project.labor_pct_of_revenue)} />
             <Row label="Material % of Revenue" value={fmtPct(project.material_pct_of_revenue)} />
             <Row label="SET % of Revenue" value={fmtPct(project.set_pct_of_revenue)} />

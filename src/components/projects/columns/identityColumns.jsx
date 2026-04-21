@@ -1,4 +1,4 @@
-import { STAGE_COLORS } from '../stageConfig'
+import { STAGE_COLORS, PROJECT_STATUS_COLORS } from '../stageConfig'
 import { Badge } from '../../ui'
 
 export const identityColumns = [
@@ -32,6 +32,17 @@ export const identityColumns = [
           {stage ?? '—'}
         </Badge>
       )
+    },
+  },
+  {
+    id: 'project_status',
+    accessorKey: 'project_status',
+    header: 'Status',
+    size: 140,
+    cell: ({ getValue }) => {
+      const status = getValue()
+      const cfg = PROJECT_STATUS_COLORS[status] ?? { tone: 'default' }
+      return status ? <Badge tone={cfg.tone}>{status}</Badge> : '—'
     },
   },
   {

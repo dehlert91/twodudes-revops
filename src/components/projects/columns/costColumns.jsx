@@ -87,4 +87,28 @@ export const costColumns = [
     size: 160,
     cell: ({ getValue }) => <span className="font-mono">{fmtCurrency(getValue())}</span>,
   },
+  {
+    id: 'forecasted_hours',
+    accessorKey: 'forecasted_hours',
+    header: 'Forecasted Hours',
+    size: 140,
+    cell: ({ getValue }) => {
+      const val = getValue()
+      return <span className="font-mono">{val != null ? Number(val).toLocaleString('en-US', { maximumFractionDigits: 1 }) : '—'}</span>
+    },
+  },
+  {
+    id: 'forecasted_materials',
+    accessorKey: 'forecasted_materials',
+    header: 'Forecasted Materials',
+    size: 160,
+    cell: ({ getValue }) => <span className="font-mono">{fmtCurrency(getValue())}</span>,
+  },
+  {
+    id: 'forecasted_set',
+    accessorKey: 'forecasted_set',
+    header: 'Forecasted SET',
+    size: 140,
+    cell: ({ getValue }) => <span className="font-mono">{fmtCurrency(getValue())}</span>,
+  },
 ]

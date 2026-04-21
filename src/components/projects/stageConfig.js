@@ -13,3 +13,12 @@ export const STAGE_COLORS = {
 }
 
 export const ALL_STAGES = Object.keys(STAGE_COLORS)
+
+// Project status (budget) badge colors
+export const PROJECT_STATUS_COLORS = {
+  'Under Budget': { tone: 'success' },
+  'On Budget':    { tone: 'warning' },
+  'Over Budget':  { tone: 'error' },
+}
+
+export const ALL_PROJECT_STATUSES = Object.keys(PROJECT_STATUS_COLORS)
