@@ -94,6 +94,7 @@ export function ProjectsTable({
   onRowClick,
   onCellEdit,
 }) {
+  const tableContainerRef = useRef(null)
   const [draggedCol, setDraggedCol] = useState(null)
   const [dropTarget, setDropTarget] = useState(null)
 
@@ -130,6 +131,7 @@ export function ProjectsTable({
       )
     },
     columnResizeMode: 'onEnd',
+    enableColumnResizing: false, // we handle resize ourselves for performance
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -151,17 +153,54 @@ export function ProjectsTable({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [columnSizingState])
 
-  // CSS-variable-driven sizing (only recalc when sizing finalizes)
+  // CSS-variable-driven sizing (only fires on final commit)
   const columnSizeVars = useMemo(() => {
     const headers = table.getFlatHeaders()
     const vars = {}
-    for (const header of headers) {
-      vars[`--header-${header.id}-size`] = header.getSize()
-      vars[`--col-${header.column.id}-size`] = header.column.getSize()
-    }
+    headers.forEach(header => {
+      vars[`--header-${header.id}-size`] = `${header.getSize()}px`
+      vars[`--col-${header.column.id}-size`] = `${header.column.getSize()}px`
+    })
     return vars
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [columnSizingState])
+
+  // Custom resize handler — bypasses React during drag, writes CSS vars directly
+  const getResizeHandler = useCallback((header) => (e) => {
+    e.preventDefault()
+    const startX = e.clientX
+    const startSize = header.column.getSize()
+    const colId = header.column.id
+    const minSize = header.column.columnDef.minSize ?? 40
+    const maxSize = header.column.columnDef.maxSize ?? 800
+
+    const onMouseMove = (moveEvent) => {
+      const delta = moveEvent.clientX - startX
+      const newSize = Math.min(Math.max(startSize + delta, minSize), maxSize)
+      tableContainerRef.current?.style.setProperty(
+        `--col-${colId}-size`,
+        `${newSize}px`
+      )
+    }
+
+    const onMouseUp = () => {
+      document.removeEventListener('mousemove', onMouseMove)
+      document.removeEventListener('mouseup', onMouseUp)
+
+      const raw = tableContainerRef.current?.style.getPropertyValue(
+        `--col-${colId}-size`
+      )
+      const finalSize = raw ? parseFloat(raw) : startSize
+
+      table.setColumnSizing(prev => ({
+        ...prev,
+        [colId]: finalSize,
+      }))
+    }
+
+    document.addEventListener('mousemove', onMouseMove)
+    document.addEventListener('mouseup', onMouseUp)
+  }, [table])
 
   // Drag and drop handlers for column reordering
   const handleDragStart = useCallback((e, headerId) => {
@@ -211,10 +250,10 @@ export function ProjectsTable({
   return (
     <>
       {/* Desktop table */}
-      <div className="hidden md:block overflow-x-auto border border-line rounded-lg">
+      <div ref={tableContainerRef} className="hidden md:block overflow-x-auto border border-line rounded-lg" style={columnSizeVars}>
         <table
           className="text-sm"
-          style={{ ...columnSizeVars, width: table.getTotalSize(), tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0 }}
+          style={{ width: table.getTotalSize(), tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0 }}
         >
           <thead>
             {table.getHeaderGroups().map(hg => (
@@ -236,7 +275,7 @@ export function ProjectsTable({
                         lastPin ? 'shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]' : ''
                       } ${dropTarget === header.id ? 'border-l-2 border-l-orange' : ''}`}
                       style={{
-                        width: `calc(var(--header-${header.id}-size) * 1px)`,
+                        width: `var(--header-${header.id}-size)`,
                         ...(pinned ? { left: pinnedOffsets[header.id] + 'px', backgroundColor: 'var(--td-bg-subtle)' } : {}),
                       }}
                     >
@@ -246,15 +285,14 @@ export function ProjectsTable({
                         {header.column.getIsSorted() === 'desc' && ' ↓'}
                       </span>
                       <div
+                        onMouseDown={getResizeHandler(header)}
                         onDoubleClick={() => header.column.resetSize()}
-                        onMouseDown={header.getResizeHandler()}
-                        onTouchStart={header.getResizeHandler()}
                         className={`absolute right-0 top-0 h-full w-4 -mr-2 cursor-col-resize select-none touch-none group/resize ${
-                          header.column.getIsResizing() ? 'bg-orange/30' : ''
+                          header.column.getIsResizing() ? 'bg-orange/20' : ''
                         }`}
                       >
-                        <div className={`mx-auto h-full w-0.5 group-hover/resize:bg-orange ${
-                          header.column.getIsResizing() ? 'bg-orange' : ''
+                        <div className={`mx-auto h-full w-0.5 transition-colors group-hover/resize:bg-orange ${
+                          header.column.getIsResizing() ? 'bg-orange' : 'bg-transparent'
                         }`} />
                       </div>
                     </th>
@@ -288,7 +326,7 @@ export function ProjectsTable({
                       <td
                         key={cell.id}
                         style={{
-                          width: `calc(var(--col-${cell.column.id}-size) * 1px)`,
+                          width: `var(--col-${cell.column.id}-size)`,
                           ...(pinned ? { left: pinnedOffsets[cell.column.id] + 'px', backgroundColor: 'var(--td-bg)' } : {}),
                         }}
                         className={`px-3 py-2.5 whitespace-nowrap overflow-hidden text-ellipsis ${
