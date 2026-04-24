@@ -10,11 +10,10 @@ import { ProjectsHealthCards } from '../components/projects/ProjectsHealthCards'
 import { ProjectDetailPanel } from '../components/projects/ProjectDetailPanel'
 import { updateProject } from '../lib/supabase'
 
-export function ProjectsPage() {
-  const { data, loading, error, refetch, setData, page, goToPage, totalCount, pageSize, kpiRows } = useProjectDetails('active')
+export function BenchmarksPage() {
+  const { data, loading, error, refetch, setData, page, goToPage, totalCount, pageSize, kpiRows } = useProjectDetails('benchmark')
   const { activeViewName, listViews, loadView, saveView, deleteView, standardView } = useTableViews()
 
-  // Filter state
   const [globalFilter, setGlobalFilter] = useState('')
   const [stageFilter, setStageFilter] = useState([])
   const [segmentFilter, setSegmentFilter] = useState([])
@@ -27,7 +26,6 @@ export function ProjectsPage() {
     goToPage(0)
   }, [goToPage])
 
-  // Column state
   const [columnOrder, setColumnOrder] = useState(standardView.columnOrder)
   const [columnVisibility, setColumnVisibility] = useState(standardView.columnVisibility)
   const [columnSizing, setColumnSizing] = useState(standardView.columnSizing)
@@ -47,41 +45,24 @@ export function ProjectsPage() {
     saveView(name, { columnOrder, columnVisibility, columnSizing })
   }, [saveView, columnOrder, columnVisibility, columnSizing])
 
-  const ACTUALS_STAGES = ['Need to Invoice', 'Benchmark in Progress', 'Benchmark Completed']
-
   const handleCellEdit = useCallback(async (po_number, field, value) => {
-    // Auto-switch tracking_mode to actuals when stage moves to a terminal stage
-    const alsoSetActuals = field === 'stage' && ACTUALS_STAGES.includes(value)
-
     let snapshot = null
-    setData(prev => {
-      snapshot = prev
-      return prev.map(row =>
-        row.po_number === po_number
-          ? { ...row, [field]: value, ...(alsoSetActuals && { tracking_mode: 'actuals_tracking' }) }
-          : row
-      )
-    })
+    setData(prev => { snapshot = prev; return prev.map(row =>
+      row.po_number === po_number ? { ...row, [field]: value } : row
+    )})
 
     const result = await updateProject(po_number, field, value)
     if (result?.error) {
       if (snapshot) setData(snapshot)
       setEditError(`Failed to save: ${result.error.message}`)
       setTimeout(() => setEditError(null), 3000)
-      return
+    } else {
+      refetch()
     }
-
-    if (alsoSetActuals) {
-      await updateProject(po_number, 'tracking_mode', 'actuals_tracking')
-    }
-
-    refetch()
   }, [setData, refetch])
 
-  // KPI bar — filtered across ALL rows
   const filteredForKPI = useMemo(() => {
     return kpiRows.filter(row => {
-      if (stageFilter.length > 0 && !stageFilter.includes(row.stage)) return false
       if (segmentFilter.length > 0 && !segmentFilter.includes(row.segment)) return false
       if (pmFilter.length > 0 && !pmFilter.includes(row.project_manager)) return false
       if (salesRepFilter.length > 0 && !salesRepFilter.includes(row.sales_rep)) return false
@@ -94,12 +75,12 @@ export function ProjectsPage() {
       }
       return true
     })
-  }, [kpiRows, stageFilter, segmentFilter, pmFilter, salesRepFilter, dynamicFilters, globalFilter])
+  }, [kpiRows, segmentFilter, pmFilter, salesRepFilter, dynamicFilters, globalFilter])
 
   if (error) {
     return (
       <div className="p-8 text-center">
-        <p className="text-error font-medium mb-2">Failed to load projects</p>
+        <p className="text-error font-medium mb-2">Failed to load benchmarks</p>
         <p className="text-sm text-muted mb-4">{error}</p>
         <Button variant="primary" size="sm" onClick={refetch}>Try again</Button>
       </div>
@@ -109,7 +90,7 @@ export function ProjectsPage() {
   return (
     <div className="p-4 md:p-6">
       <div className="flex items-center justify-between mb-4">
-        <h1 className="font-display text-2xl font-bold text-charcoal">Projects</h1>
+        <h1 className="font-display text-2xl font-bold text-charcoal">Benchmarks</h1>
         {loading && <span className="text-sm text-muted">Loading…</span>}
       </div>
 

@@ -3,7 +3,6 @@ import {
   useReactTable,
   getCoreRowModel,
   getSortedRowModel,
-  getFilteredRowModel,
   flexRender,
 } from '@tanstack/react-table'
 import { allColumns } from './columns'
@@ -27,7 +26,7 @@ function EditableCell({ getValue, row, column, onCellEdit }) {
   useEffect(() => {
     if (editing && inputRef.current) {
       inputRef.current.focus()
-      inputRef.current.select()
+      if (inputRef.current.select && meta?.inputType !== 'select') inputRef.current.select()
     }
   }, [editing])
 
@@ -59,6 +58,27 @@ function EditableCell({ getValue, row, column, onCellEdit }) {
     )
   }
 
+  if (meta?.inputType === 'select') {
+    return (
+      <select
+        ref={inputRef}
+        value={value}
+        onChange={e => { setValue(e.target.value); }}
+        onBlur={save}
+        onKeyDown={e => {
+          if (e.key === 'Escape') cancel()
+        }}
+        onClick={e => e.stopPropagation()}
+        className="w-full px-1 py-0.5 text-sm border border-orange rounded focus:outline-none focus:ring-1 focus:ring-orange -mx-1 bg-white"
+      >
+        <option value="">— Select —</option>
+        {(meta.options ?? []).map(opt => (
+          <option key={opt} value={opt}>{opt}</option>
+        ))}
+      </select>
+    )
+  }
+
   return (
     <input
       ref={inputRef}
@@ -83,9 +103,7 @@ export function ProjectsTable({
   segmentFilter,
   pmFilter = [],
   salesRepFilter = [],
-  companyFilter = [],
-  customerFilter = [],
-  teamLeaderFilter = [],
+  dynamicFilters = {},
   columnVisibility,
   columnOrder,
   columnSizing,
@@ -93,48 +111,53 @@ export function ProjectsTable({
   onColumnOrderChange,
   onRowClick,
   onCellEdit,
+  page = 0,
+  goToPage,
+  totalCount = 0,
+  pageSize = 100,
 }) {
   const tableContainerRef = useRef(null)
   const [draggedCol, setDraggedCol] = useState(null)
   const [dropTarget, setDropTarget] = useState(null)
 
-  // Client-side filtered data
+  // Client-side filtered data (filters + search across ALL rows, not just current page)
   const filtered = useMemo(() => {
+    const q = globalFilter?.toLowerCase() || ''
     return data.filter(row => {
+      if (q && !(row.po_number?.toLowerCase().includes(q) || row.job_name?.toLowerCase().includes(q))) return false
       if (stageFilter.length > 0 && !stageFilter.includes(row.stage)) return false
       if (segmentFilter.length > 0 && !segmentFilter.includes(row.segment)) return false
       if (pmFilter.length > 0 && !pmFilter.includes(row.project_manager)) return false
       if (salesRepFilter.length > 0 && !salesRepFilter.includes(row.sales_rep)) return false
-      if (companyFilter.length > 0 && !companyFilter.includes(row.company)) return false
-      if (customerFilter.length > 0 && !customerFilter.includes(row.customer)) return false
-      if (teamLeaderFilter.length > 0 && !teamLeaderFilter.includes(row.team_leader)) return false
+      for (const [key, vals] of Object.entries(dynamicFilters)) {
+        if (vals.length > 0 && !vals.includes(String(row[key] ?? ''))) return false
+      }
       return true
     })
-  }, [data, stageFilter, segmentFilter, pmFilter, salesRepFilter, companyFilter, customerFilter, teamLeaderFilter])
+  }, [data, globalFilter, stageFilter, segmentFilter, pmFilter, salesRepFilter, dynamicFilters])
+
+  // Client-side pagination on filtered results
+  const filteredTotal = filtered.length
+  const clientTotalPages = Math.ceil(filteredTotal / pageSize)
+  const paginatedData = useMemo(() => {
+    const start = page * pageSize
+    return filtered.slice(start, start + pageSize)
+  }, [filtered, page, pageSize])
 
   const table = useReactTable({
-    data: filtered,
+    data: paginatedData,
     columns: allColumns,
     state: {
-      globalFilter,
       columnVisibility,
       columnOrder,
       columnPinning: { left: PINNED_IDS },
       columnSizing: columnSizing || {},
     },
     onColumnSizingChange: onColumnSizingChange,
-    globalFilterFn: (row, _colId, filterVal) => {
-      const q = filterVal.toLowerCase()
-      return (
-        row.original.po_number?.toLowerCase().includes(q) ||
-        row.original.job_name?.toLowerCase().includes(q)
-      )
-    },
     columnResizeMode: 'onEnd',
     enableColumnResizing: false, // we handle resize ourselves for performance
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
   })
 
   const rows = table.getRowModel().rows
@@ -247,8 +270,51 @@ export function ProjectsTable({
   const isPinned = (id) => PINNED_IDS.includes(id)
   const isLastPinned = (id) => id === PINNED_IDS[PINNED_IDS.length - 1]
 
+  const paginationBar = clientTotalPages > 1 ? (
+    <div className="flex items-center justify-between mb-2">
+      <p className="text-xs text-muted">
+        {page * pageSize + 1}–{Math.min((page + 1) * pageSize, filteredTotal)} of {filteredTotal.toLocaleString()}
+      </p>
+      <div className="flex items-center gap-1">
+        <button
+          onClick={() => goToPage(0)}
+          disabled={page === 0}
+          className="px-2 py-1 text-xs rounded border border-line hover:bg-surface-muted disabled:opacity-30 disabled:cursor-not-allowed"
+        >
+          ««
+        </button>
+        <button
+          onClick={() => goToPage(page - 1)}
+          disabled={page === 0}
+          className="px-2 py-1 text-xs rounded border border-line hover:bg-surface-muted disabled:opacity-30 disabled:cursor-not-allowed"
+        >
+          ‹
+        </button>
+        <span className="text-xs text-muted px-2">
+          Page {page + 1} of {clientTotalPages}
+        </span>
+        <button
+          onClick={() => goToPage(page + 1)}
+          disabled={page >= clientTotalPages - 1}
+          className="px-2 py-1 text-xs rounded border border-line hover:bg-surface-muted disabled:opacity-30 disabled:cursor-not-allowed"
+        >
+          ›
+        </button>
+        <button
+          onClick={() => goToPage(clientTotalPages - 1)}
+          disabled={page >= clientTotalPages - 1}
+          className="px-2 py-1 text-xs rounded border border-line hover:bg-surface-muted disabled:opacity-30 disabled:cursor-not-allowed"
+        >
+          »»
+        </button>
+      </div>
+    </div>
+  ) : null
+
   return (
     <>
+      {paginationBar}
+
       {/* Desktop table */}
       <div ref={tableContainerRef} className="hidden md:block overflow-x-auto border border-line rounded-lg" style={columnSizeVars}>
         <table
@@ -362,7 +428,9 @@ export function ProjectsTable({
         )}
       </div>
 
-      <p className="text-xs text-muted mt-2">{rows.length} project{rows.length !== 1 ? 's' : ''}</p>
+      {!paginationBar && (
+        <p className="text-xs text-muted mt-2">{filteredTotal} project{filteredTotal !== 1 ? 's' : ''}</p>
+      )}
     </>
   )
 }

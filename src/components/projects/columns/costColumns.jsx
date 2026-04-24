@@ -30,9 +30,9 @@ export const costColumns = [
     cell: ({ getValue }) => <span className="font-mono">{fmtCurrency(getValue())}</span>,
   },
   {
-    id: 'est_cost_at_completion',
-    accessorKey: 'est_cost_at_completion',
-    header: 'Est Cost at Close',
+    id: 'total_projected_cost',
+    accessorKey: 'total_projected_cost',
+    header: 'Total Projected Cost',
     size: 140,
     cell: ({ getValue }) => <span className="font-mono">{fmtCurrency(getValue())}</span>,
   },

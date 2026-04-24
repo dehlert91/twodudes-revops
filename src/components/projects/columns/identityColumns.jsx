@@ -1,4 +1,4 @@
-import { STAGE_COLORS, PROJECT_STATUS_COLORS } from '../stageConfig'
+import { STAGE_COLORS, ALL_STAGES, PROJECT_STATUS_COLORS, TRACKING_MODE_COLORS } from '../stageConfig'
 import { Badge } from '../../ui'
 
 export const identityColumns = [
@@ -24,6 +24,7 @@ export const identityColumns = [
     accessorKey: 'stage',
     header: 'Stage',
     size: 160,
+    meta: { editable: true, inputType: 'select', options: ALL_STAGES },
     cell: ({ getValue }) => {
       const stage = getValue()
       const cfg = STAGE_COLORS[stage] ?? { tone: 'default', dot: 'bg-muted' }
@@ -39,10 +40,23 @@ export const identityColumns = [
     accessorKey: 'project_status',
     header: 'Status',
     size: 140,
+    meta: { editable: true, inputType: 'select', options: ['Under Budget', 'On Budget', 'Over Budget'] },
     cell: ({ getValue }) => {
       const status = getValue()
       const cfg = PROJECT_STATUS_COLORS[status] ?? { tone: 'default' }
       return status ? <Badge tone={cfg.tone}>{status}</Badge> : '—'
+    },
+  },
+  {
+    id: 'tracking_mode',
+    accessorKey: 'tracking_mode',
+    header: 'Tracking',
+    size: 130,
+    meta: { editable: true, inputType: 'select', options: ['actuals_tracking', 'forecast'] },
+    cell: ({ getValue }) => {
+      const val = getValue()
+      const cfg = TRACKING_MODE_COLORS[val] ?? { tone: 'default', dot: 'bg-muted', label: val }
+      return val ? <Badge tone={cfg.tone} dot={cfg.dot}>{cfg.label}</Badge> : '—'
     },
   },
   {

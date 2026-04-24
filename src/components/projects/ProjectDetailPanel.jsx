@@ -103,8 +103,9 @@ export function ProjectDetailPanel({ project, onClose }) {
             <Row label="Est. SET Remaining" value={fmtCurrency(project.est_set_remaining)} />
             <Row label="Total Cost to Date" value={fmtCurrency(project.total_cost_to_date)} bold />
             <Row label="Est. Total Remaining" value={fmtCurrency(project.est_total_remaining_cost)} />
-            <Row label="Est. Cost at Completion" value={fmtCurrency(project.est_cost_at_completion)} bold />
+            <Row label="Total Projected Cost" value={fmtCurrency(project.total_projected_cost)} bold />
             <Row label="Forecasted Hours" value={project.forecasted_hours != null ? Number(project.forecasted_hours).toLocaleString('en-US', { maximumFractionDigits: 1 }) : null} />
+            <Row label="Forecasted Labor Cost" value={fmtCurrency(project.forecast_labor_cost)} />
             <Row label="Forecasted Materials" value={fmtCurrency(project.forecasted_materials)} />
             <Row label="Forecasted SET" value={fmtCurrency(project.forecasted_set)} />
             <Row label="Labor % of Revenue" value={fmtPct(project.labor_pct_of_revenue)} />
@@ -117,6 +118,8 @@ export function ProjectDetailPanel({ project, onClose }) {
             <Row label="Est. GP%" value={fmtPct(project.est_gp_pct)} bold />
             <Row label="Est. GP $/hr" value={fmtCurrency(project.est_gp_per_hour)} />
             <Row label="Forecasted GP" value={fmtCurrency(project.forecasted_gp)} />
+            <Row label="Forecasted GP%" value={fmtPct(project.forecasted_gp_pct)} />
+            <Row label="Forecasted GP $/hr" value={fmtCurrency(project.forecasted_gp_per_hour)} />
           </Section>
 
           <Section title="Billing & WIP">

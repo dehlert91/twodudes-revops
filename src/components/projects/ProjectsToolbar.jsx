@@ -1,15 +1,13 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { ALL_STAGES } from './stageConfig'
+import { allColumns } from './columns'
 import { MultiSelectDropdown } from '../ui/MultiSelectDropdown'
 import { Button } from '../ui'
 
 const SEGMENTS = ['CDO', 'CGC', 'RCG / RDO', 'RDO', 'RGC']
 
-const OPTIONAL_FILTERS = [
-  { key: 'company', label: 'Company' },
-  { key: 'customer', label: 'Customer' },
-  { key: 'teamLeader', label: 'Team Leader' },
-]
+// Permanent filters always shown
+const PERMANENT_KEYS = ['stage', 'segment', 'project_manager', 'sales_rep']
 
 const VIEW_MODES = [
   { key: 'list', label: 'List' },
@@ -17,16 +15,20 @@ const VIEW_MODES = [
   { key: 'cards', label: 'Cards' },
 ]
 
+// Build a label map from column definitions
+const COL_LABELS = Object.fromEntries(allColumns.map(c => [c.id, c.header]))
+
 export function ProjectsToolbar({
   globalFilter, onGlobalFilter,
   stageFilter, onStageFilter,
   segmentFilter, onSegmentFilter,
   pmFilter, onPmFilter,
   salesRepFilter, onSalesRepFilter,
-  companyFilter, onCompanyFilter,
-  customerFilter, onCustomerFilter,
-  teamLeaderFilter, onTeamLeaderFilter,
-  pmOptions, salesRepOptions, companyOptions, customerOptions, teamLeaderOptions,
+  // Dynamic filters
+  dynamicFilters = {},
+  onDynamicFilterChange,
+  // All data for building option lists
+  allData = [],
   // View props
   activeViewName, viewNames, onLoadView, onSaveView, onDeleteView,
   onRefresh, loading,
@@ -35,16 +37,18 @@ export function ProjectsToolbar({
 }) {
   const [activeOptional, setActiveOptional] = useState([])
   const [addMenuOpen, setAddMenuOpen] = useState(false)
+  const [filterSearch, setFilterSearch] = useState('')
   const [viewMenuOpen, setViewMenuOpen] = useState(false)
   const [savingAs, setSavingAs] = useState(false)
   const [newViewName, setNewViewName] = useState('')
   const addRef = useRef(null)
   const viewRef = useRef(null)
   const saveInputRef = useRef(null)
+  const filterSearchRef = useRef(null)
 
   useEffect(() => {
     function handleClick(e) {
-      if (addRef.current && !addRef.current.contains(e.target)) setAddMenuOpen(false)
+      if (addRef.current && !addRef.current.contains(e.target)) { setAddMenuOpen(false); setFilterSearch('') }
       if (viewRef.current && !viewRef.current.contains(e.target)) {
         setViewMenuOpen(false)
         setSavingAs(false)
@@ -58,15 +62,42 @@ export function ProjectsToolbar({
     if (savingAs && saveInputRef.current) saveInputRef.current.focus()
   }, [savingAs])
 
+  useEffect(() => {
+    if (addMenuOpen && filterSearchRef.current) filterSearchRef.current.focus()
+  }, [addMenuOpen])
+
+  // Build unique sorted options for any column from allData
+  const optionsCache = useMemo(() => {
+    const cache = {}
+    for (const key of activeOptional) {
+      cache[key] = [...new Set(allData.map(r => r[key]).filter(Boolean))].sort()
+    }
+    return cache
+  }, [allData, activeOptional])
+
+  // Columns available for "Add Filter" — exclude permanent ones and already-active ones
+  const availableFilterColumns = useMemo(() => {
+    const taken = new Set([...PERMANENT_KEYS, ...activeOptional])
+    return allColumns
+      .filter(c => !taken.has(c.id) && c.id !== 'po_number' && c.id !== 'job_name')
+      .map(c => ({ key: c.id, label: c.header }))
+  }, [activeOptional])
+
+  const filteredAvailable = useMemo(() => {
+    if (!filterSearch) return availableFilterColumns
+    const q = filterSearch.toLowerCase()
+    return availableFilterColumns.filter(f => f.label.toLowerCase().includes(q))
+  }, [availableFilterColumns, filterSearch])
+
   function addOptionalFilter(key) {
     setActiveOptional(prev => [...prev, key])
     setAddMenuOpen(false)
+    setFilterSearch('')
   }
 
   function removeOptionalFilter(key) {
     setActiveOptional(prev => prev.filter(k => k !== key))
-    const clearMap = { company: onCompanyFilter, customer: onCustomerFilter, teamLeader: onTeamLeaderFilter }
-    clearMap[key]?.([])
+    onDynamicFilterChange?.(key, [])
   }
 
   function handleSaveView() {
@@ -77,14 +108,6 @@ export function ProjectsToolbar({
     setSavingAs(false)
     setViewMenuOpen(false)
   }
-
-  const optionalConfig = {
-    company:    { label: 'Company',     options: companyOptions,    selected: companyFilter,    onChange: onCompanyFilter },
-    customer:   { label: 'Customer',    options: customerOptions,   selected: customerFilter,   onChange: onCustomerFilter },
-    teamLeader: { label: 'Team Leader', options: teamLeaderOptions, selected: teamLeaderFilter, onChange: onTeamLeaderFilter },
-  }
-
-  const availableOptional = OPTIONAL_FILTERS.filter(f => !activeOptional.includes(f.key))
 
   return (
     <div className="flex flex-col gap-3 mb-4">
@@ -202,56 +225,67 @@ export function ProjectsToolbar({
         />
         <MultiSelectDropdown
           label="PM"
-          options={pmOptions}
+          options={useMemo(() => [...new Set(allData.map(r => r.project_manager).filter(Boolean))].sort(), [allData])}
           selected={pmFilter}
           onChange={onPmFilter}
         />
         <MultiSelectDropdown
           label="Sales Rep"
-          options={salesRepOptions}
+          options={useMemo(() => [...new Set(allData.map(r => r.sales_rep).filter(Boolean))].sort(), [allData])}
           selected={salesRepFilter}
           onChange={onSalesRepFilter}
         />
 
-        {/* Active optional filters */}
-        {activeOptional.map(key => {
-          const cfg = optionalConfig[key]
-          return (
-            <MultiSelectDropdown
-              key={key}
-              label={cfg.label}
-              options={cfg.options}
-              selected={cfg.selected}
-              onChange={cfg.onChange}
-              onRemove={() => removeOptionalFilter(key)}
-            />
-          )
-        })}
+        {/* Dynamic optional filters */}
+        {activeOptional.map(key => (
+          <MultiSelectDropdown
+            key={key}
+            label={COL_LABELS[key] || key}
+            options={optionsCache[key] || []}
+            selected={dynamicFilters[key] || []}
+            onChange={vals => onDynamicFilterChange?.(key, vals)}
+            onRemove={() => removeOptionalFilter(key)}
+          />
+        ))}
 
         {/* + Add Filter */}
-        {availableOptional.length > 0 && (
-          <div ref={addRef} className="relative">
-            <button
-              onClick={() => setAddMenuOpen(o => !o)}
-              className="px-2.5 py-1 rounded text-xs font-medium border border-dashed border-line text-muted hover:border-line-strong hover:text-charcoal transition-colors"
-            >
-              + Add Filter
-            </button>
-            {addMenuOpen && (
-              <div className="absolute z-50 mt-1 w-40 bg-surface border border-line rounded-md shadow-elevated">
-                {availableOptional.map(f => (
-                  <button
-                    key={f.key}
-                    onClick={() => addOptionalFilter(f.key)}
-                    className="w-full text-left px-3 py-1.5 text-xs hover:bg-surface-subtle"
-                  >
-                    {f.label}
-                  </button>
-                ))}
+        <div ref={addRef} className="relative">
+          <button
+            onClick={() => setAddMenuOpen(o => !o)}
+            className="px-2.5 py-1 rounded text-xs font-medium border border-dashed border-line text-muted hover:border-line-strong hover:text-charcoal transition-colors"
+          >
+            + Add Filter
+          </button>
+          {addMenuOpen && (
+            <div className="absolute z-50 mt-1 w-52 bg-surface border border-line rounded-md shadow-elevated max-h-72 flex flex-col">
+              <div className="p-1.5 border-b border-line">
+                <input
+                  ref={filterSearchRef}
+                  type="text"
+                  value={filterSearch}
+                  onChange={e => setFilterSearch(e.target.value)}
+                  placeholder="Search columns…"
+                  className="w-full px-2 py-1 text-xs border border-line rounded focus:outline-none focus:ring-1 focus:ring-orange"
+                />
               </div>
-            )}
-          </div>
-        )}
+              <div className="overflow-y-auto">
+                {filteredAvailable.length === 0 ? (
+                  <p className="px-3 py-2 text-xs text-muted">No columns found</p>
+                ) : (
+                  filteredAvailable.map(f => (
+                    <button
+                      key={f.key}
+                      onClick={() => addOptionalFilter(f.key)}
+                      className="w-full text-left px-3 py-1.5 text-xs hover:bg-surface-subtle"
+                    >
+                      {f.label}
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

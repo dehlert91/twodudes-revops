@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AppShell } from './components/layout/AppShell'
 import { ProjectsPage } from './pages/ProjectsPage'
+import { BenchmarksPage } from './pages/BenchmarksPage'
 import { StubPage } from './pages/StubPage'
 
 export default function App() {
@@ -13,7 +14,7 @@ export default function App() {
           <Route path="schedule"   element={<StubPage title="Schedule" />} />
           <Route path="projects"   element={<ProjectsPage />} />
           <Route path="finance"    element={<StubPage title="Finance" />} />
-          <Route path="benchmarks" element={<StubPage title="Benchmarks" />} />
+          <Route path="benchmarks" element={<BenchmarksPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

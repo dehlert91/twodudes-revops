@@ -22,3 +22,9 @@ export const PROJECT_STATUS_COLORS = {
 }
 
 export const ALL_PROJECT_STATUSES = Object.keys(PROJECT_STATUS_COLORS)
+
+// Tracking mode badge colors
+export const TRACKING_MODE_COLORS = {
+  'actuals_tracking': { tone: 'info',    dot: 'bg-info',    label: 'Actuals' },
+  'forecast':         { tone: 'primary', dot: 'bg-orange',  label: 'Forecast' },
+}
