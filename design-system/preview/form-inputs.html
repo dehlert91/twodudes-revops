@@ -1,0 +1,42 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../colors_and_type.css"><style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#fff;font-family:var(--font-body);padding:24px;color:var(--td-text-primary)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:600px}
+.field label{display:block;font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--td-text-secondary);margin-bottom:6px}
+.input{width:100%;font-family:var(--font-body);font-size:14px;padding:9px 12px;border:1px solid var(--td-border-strong);border-radius:4px;background:#fff;color:var(--td-text-primary)}
+.input:focus{outline:none;border-color:var(--td-orange);box-shadow:0 0 0 3px rgba(229,122,58,0.15)}
+.input.mono{font-family:var(--font-mono)}
+.help{font-size:11px;color:var(--td-text-muted);margin-top:4px}
+.err{font-size:11px;color:var(--td-error);margin-top:4px}
+.input.error{border-color:var(--td-error)}
+select.input{appearance:none;background-image:linear-gradient(45deg,transparent 50%,#666 50%),linear-gradient(135deg,#666 50%,transparent 50%);background-position:calc(100% - 14px) 50%,calc(100% - 9px) 50%;background-size:5px 5px;background-repeat:no-repeat;padding-right:32px}
+</style></head><body>
+<div class="grid">
+  <div class="field">
+    <label>Customer</label>
+    <input class="input" value="Oak Ridge HOA">
+  </div>
+  <div class="field">
+    <label>PO Number</label>
+    <input class="input mono" value="PO-2024-0187">
+  </div>
+  <div class="field">
+    <label>Segment</label>
+    <select class="input"><option>Residential Direct Owner (RDO)</option><option>Commercial General Contractor (CGC)</option></select>
+  </div>
+  <div class="field">
+    <label>Revenue</label>
+    <input class="input mono" value="$48,250.00">
+  </div>
+  <div class="field">
+    <label>Hours estimate <span style="text-transform:none;color:var(--td-text-muted);letter-spacing:0">(required)</span></label>
+    <input class="input mono error" value="">
+    <div class="err">Nothing here yet — enter an estimate.</div>
+  </div>
+  <div class="field">
+    <label>Notes</label>
+    <input class="input" placeholder="Optional">
+    <div class="help">Visible to PMs only.</div>
+  </div>
+</div>
+</body></html>

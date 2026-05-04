@@ -1,0 +1,28 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../colors_and_type.css"><style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#fff;font-family:var(--font-body);padding:24px;color:var(--td-text-primary)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--td-text-muted);text-align:left;padding:10px 12px;border-bottom:1px solid var(--td-border-strong);background:#fff}
+tbody td{padding:12px;border-bottom:1px solid var(--td-border)}
+tbody tr:nth-child(even){background:var(--td-bg-muted)}
+tbody tr:hover{background:rgba(229,122,58,0.05)}
+.num{font-family:var(--font-mono);font-variant-numeric:tabular-nums;text-align:right}
+.po{font-family:var(--font-mono);color:var(--td-text-secondary)}
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;padding:3px 7px;border-radius:3px;border:1px solid}
+.b-warn{background:rgba(229,122,58,0.12);color:#B8561E;border-color:rgba(229,122,58,0.3)}
+.b-ok{background:rgba(74,140,92,0.12);color:#2E6B3F;border-color:rgba(74,140,92,0.3)}
+.b-info{background:rgba(41,128,185,0.12);color:#1F5E87;border-color:rgba(41,128,185,0.3)}
+.b-def{background:#F4F4F4;color:#434343;border-color:#E0E0E0}
+.dot{width:6px;height:6px;border-radius:999px}
+</style></head><body>
+<table>
+  <thead><tr><th>PO</th><th>Job</th><th>Stage</th><th>PM</th><th class="num">Revenue</th><th class="num">GP %</th></tr></thead>
+  <tbody>
+    <tr><td class="po">PO-2024-0187</td><td>Lincoln Ave. Duplex — Full Exterior</td><td><span class="badge b-warn"><span class="dot" style="background:#E57A3A"></span>In Progress</span></td><td>Pete Barber</td><td class="num">$48,250.00</td><td class="num">31.2%</td></tr>
+    <tr><td class="po">PO-2024-0222</td><td>Oak Ridge Estates — Exterior Paint</td><td><span class="badge b-def"><span class="dot" style="background:#8E8E8E"></span>Not Scheduled</span></td><td>Jake Holt</td><td class="num">$36,400.00</td><td class="num">22.1%</td></tr>
+    <tr><td class="po">PO-2024-0234</td><td>Manheim Twp HS — Gymnasium</td><td><span class="badge b-warn"><span class="dot" style="background:#E57A3A"></span>In Progress</span></td><td>Rita Chen</td><td class="num">$72,500.00</td><td class="num">29.6%</td></tr>
+    <tr><td class="po">PO-2024-0241</td><td>Dudes HQ — Office Refresh</td><td><span class="badge b-info"><span class="dot" style="background:#2980B9"></span>Need to Invoice</span></td><td>Pete Barber</td><td class="num">$8,400.00</td><td class="num">41.0%</td></tr>
+    <tr><td class="po">PO-2024-0262</td><td>Conestoga Library — Reading Room</td><td><span class="badge b-ok"><span class="dot" style="background:#4A8C5C"></span>Complete</span></td><td>Marcus Finn</td><td class="num">$22,800.00</td><td class="num">32.9%</td></tr>
+  </tbody>
+</table>
+</body></html>

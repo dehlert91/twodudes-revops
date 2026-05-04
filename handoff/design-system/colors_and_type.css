@@ -1,0 +1,88 @@
+/* =========================================================
+   TWO DUDES — Design Tokens
+   Single source of truth for color, type, spacing, radii, shadow.
+   ========================================================= */
+
+/* ---------- Fonts ----------
+   Brand spec: DIN 2014 (all type) + DM Mono (numeric data).
+   Both are Adobe Typekit; web substitutes used until licensed
+   files are dropped into assets/fonts/ and the @font-face blocks
+   below are switched on.
+*/
+@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@700&display=swap');
+
+:root {
+  --font-display: 'Barlow', 'din-2014', 'Helvetica Neue', Arial, sans-serif;
+  --font-body:    'Barlow', 'din-2014', 'Helvetica Neue', Arial, sans-serif;
+  --font-mono:    'DM Mono', 'Courier New', ui-monospace, monospace;
+
+  /* ---------- Brand color ---------- */
+  --td-orange:        #E57A3A;
+  --td-orange-dark:   #C4622A;
+  --td-orange-light:  #F0A882;
+
+  /* Text */
+  --td-text-primary:   #434343;
+  --td-text-secondary: #666666;
+  --td-text-muted:     #8E8E8E;
+  --td-text-light:     #8E8E8E; /* alias */
+  --td-text-inverse:   #FFFFFF;
+
+  /* Surfaces */
+  --td-bg:           #FFFFFF;
+  --td-bg-subtle:    #F8F8F8;
+  --td-bg-muted:     #F4F4F4;
+  --td-bg-dark:      #434343;
+  --td-bg-darker:    #222222;
+
+  /* Borders */
+  --td-border:         #E0E0E0;
+  --td-border-strong:  #CCCCCC;
+
+  /* Status */
+  --td-success:  #4A8C5C;
+  --td-warning:  #E57A3A;
+  --td-error:    #C0392B;
+  --td-info:     #2980B9;
+  --td-neutral:  #8E8E8E;
+
+  /* Spacing */
+  --space-xs:  4px;
+  --space-sm:  8px;
+  --space-md:  16px;
+  --space-lg:  24px;
+  --space-xl:  40px;
+  --space-2xl: 64px;
+
+  /* Radii */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  /* Shadow */
+  --shadow-card:     0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-elevated: 0 4px 12px rgba(0,0,0,0.10);
+}
+
+/* ---------- Base ---------- */
+html, body { font-family: var(--font-body); color: var(--td-text-primary); background: var(--td-bg); }
+
+/* Label convention: uppercase, tight-spaced, geometric. */
+.td-label {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--td-text-secondary);
+}
+
+/* Data convention: mono, tabular nums. */
+.td-data {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+/* Orange top-strip (brand signature). */
+.td-strip { height: 6px; background: var(--td-orange); }

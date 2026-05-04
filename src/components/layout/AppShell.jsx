@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
+import { useAuth } from '../../contexts/AuthContext'
 
 const NAV_ITEMS = [
   {
@@ -11,6 +12,10 @@ const NAV_ITEMS = [
         <path d="M7 14l4-4 4 3 5-6" />
       </svg>
     ),
+    submenu: [
+      { to: '/revenue', label: 'Pipeline' },
+      { to: '/revenue/allocation', label: 'Allocation' },
+    ],
   },
   {
     to: '/schedule', label: 'Schedule',
@@ -40,6 +45,12 @@ const NAV_ITEMS = [
         <path d="M12 2.5v19M16.5 6H10a3 3 0 000 6h4.5a3 3 0 010 6H7.5" />
       </svg>
     ),
+    submenu: [
+      { to: '/finance', label: 'Dashboard' },
+      { to: '/finance/wip', label: 'Unbilled' },
+      { to: '/finance/billing', label: 'Billing' },
+      { to: '/finance/close', label: 'Month Close' },
+    ],
   },
   {
     to: '/benchmarks', label: 'Benchmarks',
@@ -67,79 +78,162 @@ const ChevronRight = () => (
   </svg>
 )
 
-export function AppShell() {
-  const [expanded, setExpanded] = useState(true)
+const INK = '#3A2E28'
+const RAIL = '#F0A882'
+const ACTIVE_BG = 'rgba(255,255,255,0.55)'
+const ACTIVE_BORDER = 'rgba(255,255,255,0.8)'
+const INACTIVE = 'rgba(58,46,40,0.70)'
 
-  const INK = '#3A2E28'               // warm charcoal for type on peach
-  const RAIL = '#F0A882'              // light orange rail
-  const PANEL = '#F7CDB1'             // lighter peach expanded panel
-  const ACTIVE_BG_RAIL = 'rgba(255,255,255,0.55)'
-  const ACTIVE_BORDER = 'rgba(255,255,255,0.8)'
-  const ACTIVE_BG_PANEL = 'rgba(255,255,255,0.55)'
-  const INACTIVE = 'rgba(58,46,40,0.70)'
+function NavRow({ item, expanded }) {
+  const [hover, setHover] = useState(false)
+  const closeTimer = useRef(null)
+  const hasSubmenu = !!(item.submenu && item.submenu.length)
+
+  function open() {
+    clearTimeout(closeTimer.current)
+    setHover(true)
+  }
+  function scheduleClose() {
+    clearTimeout(closeTimer.current)
+    closeTimer.current = setTimeout(() => setHover(false), 150)
+  }
+
+  return (
+    <div
+      onMouseEnter={open}
+      onMouseLeave={scheduleClose}
+      style={{ position: 'relative' }}
+    >
+      <NavLink
+        to={item.to}
+        title={!expanded ? item.label : undefined}
+        className="flex items-center transition-colors"
+        style={({ isActive }) => ({
+          height: 44,
+          margin: '2px 12px',
+          padding: expanded ? '0 12px' : 0,
+          justifyContent: expanded ? 'flex-start' : 'center',
+          gap: 12,
+          borderRadius: 6,
+          background: isActive ? ACTIVE_BG : (hover ? 'rgba(255,255,255,0.4)' : 'transparent'),
+          color: isActive ? INK : (hover ? INK : INACTIVE),
+          border: `1px solid ${isActive ? ACTIVE_BORDER : (hover ? 'rgba(255,255,255,0.5)' : 'transparent')}`,
+          fontSize: 14,
+          fontWeight: isActive ? 700 : 500,
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          cursor: 'pointer',
+        })}
+      >
+        <span style={{ flexShrink: 0, display: 'grid', placeItems: 'center', width: 20, height: 20 }}>
+          {item.icon}
+        </span>
+        {expanded && <span>{item.label}</span>}
+      </NavLink>
+
+      {/* Hover flyout: submenu items (or just label tooltip when collapsed) */}
+      {hover && (hasSubmenu || !expanded) && (
+        <div
+          onMouseEnter={open}
+          onMouseLeave={scheduleClose}
+          style={{
+            position: 'absolute',
+            left: '100%',
+            top: 0,
+            marginLeft: 6,
+            background: '#fff',
+            color: INK,
+            borderRadius: 8,
+            boxShadow: '0 4px 12px rgba(58,46,40,0.18), 0 0 0 1px rgba(58,46,40,0.08)',
+            padding: 6,
+            minWidth: 180,
+            zIndex: 50,
+          }}
+        >
+          {!expanded && (
+            <div style={{
+              padding: '6px 10px', fontSize: 12, fontWeight: 700,
+              color: 'rgba(58,46,40,0.55)', textTransform: 'uppercase', letterSpacing: '0.05em',
+            }}>
+              {item.label}
+            </div>
+          )}
+          {hasSubmenu && item.submenu.map(sub => (
+            <NavLink
+              key={sub.to}
+              to={sub.to}
+              className="block transition-colors"
+              style={({ isActive }) => ({
+                padding: '8px 10px',
+                fontSize: 13,
+                fontWeight: isActive ? 700 : 500,
+                color: isActive ? INK : 'rgba(58,46,40,0.78)',
+                borderRadius: 4,
+                background: isActive ? 'rgba(240,168,130,0.25)' : 'transparent',
+              })}
+            >
+              {sub.label}
+            </NavLink>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+export function AppShell() {
+  const { user, signOut } = useAuth()
+  const [expanded, setExpanded] = useState(true)
 
   return (
     <div className="flex h-screen font-sans text-charcoal bg-surface">
-      {/* Rail */}
       <aside
         className="flex flex-col flex-shrink-0 transition-all duration-200 ease-out"
         style={{
-          width: 68,
+          width: expanded ? 220 : 68,
           background: RAIL,
           color: INK,
           borderRight: '1px solid rgba(58,46,40,0.08)',
         }}
       >
-        {/* Logo button */}
-        <div className="flex items-center justify-center" style={{ padding: '16px 0 0' }}>
+        {/* Logo */}
+        <div className="flex items-center" style={{
+          padding: '16px 0 0',
+          justifyContent: expanded ? 'flex-start' : 'center',
+          paddingLeft: expanded ? 22 : 0,
+          gap: 10,
+        }}>
           <div
             className="rounded-full overflow-hidden grid place-items-center"
             style={{
               width: 44, height: 44, background: '#fff',
               boxShadow: '0 2px 6px rgba(58,46,40,0.18), 0 0 0 1px rgba(58,46,40,0.06)',
+              flexShrink: 0,
             }}
           >
             <img src="/assets/logo-circle.png" alt="Two Dudes"
                  className="block" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
           </div>
+          {expanded && (
+            <div style={{ fontSize: 14, fontWeight: 700, whiteSpace: 'nowrap' }}>Two Dudes</div>
+          )}
         </div>
 
-        {/* Icon nav */}
-        <nav className="flex flex-col items-center" style={{ gap: 4, marginTop: 24 }}>
-          {NAV_ITEMS.map(({ to, label, icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              title={label}
-              className="relative grid place-items-center transition-colors"
-              style={({ isActive }) => ({
-                width: 44, height: 44, borderRadius: 6,
-                background: isActive ? ACTIVE_BG_RAIL : 'transparent',
-                color: isActive ? INK : INACTIVE,
-                border: `1px solid ${isActive ? ACTIVE_BORDER : 'transparent'}`,
-              })}
-            >
-              {({ isActive }) => (
-                <>
-                  {icon}
-                  {isActive && (
-                    <span
-                      style={{
-                        position: 'absolute', left: -1, top: 10, bottom: 10,
-                        width: 2, background: INK, borderRadius: '0 2px 2px 0',
-                      }}
-                    />
-                  )}
-                </>
-              )}
-            </NavLink>
+        {/* Nav */}
+        <nav style={{ marginTop: 24 }}>
+          {NAV_ITEMS.map(item => (
+            <NavRow key={item.to} item={item} expanded={expanded} />
           ))}
         </nav>
 
         <div className="flex-1" />
 
         {/* Collapse / expand toggle */}
-        <div className="flex justify-center" style={{ paddingBottom: 12 }}>
+        <div className="flex" style={{
+          paddingBottom: 12,
+          justifyContent: expanded ? 'flex-end' : 'center',
+          paddingRight: expanded ? 16 : 0,
+        }}>
           <button
             onClick={() => setExpanded(e => !e)}
             title={expanded ? 'Collapse panel' : 'Expand panel'}
@@ -155,72 +249,47 @@ export function AppShell() {
           </button>
         </div>
 
-        {/* Avatar */}
-        <div className="flex justify-center" style={{ paddingBottom: 16 }}>
-          <div
-            className="rounded-full grid place-items-center font-bold"
-            style={{
-              width: 32, height: 32, background: INK, color: '#fff',
-              fontSize: 12,
-            }}
-          >
-            PB
-          </div>
-        </div>
-      </aside>
-
-      {/* Expanded label panel — slides out */}
-      <aside
-        className="flex flex-col flex-shrink-0 overflow-hidden transition-all duration-200 ease-out"
-        style={{
-          width: expanded ? 220 : 0,
-          background: PANEL,
-          color: INK,
-        }}
-      >
-        <div style={{ width: 220, minWidth: 220 }} className="flex flex-col h-full">
-          {/* Spacer to align with logo row */}
-          <div style={{ height: 60 }} />
-
-          <nav className="flex-1" style={{ padding: '0 10px' }}>
-            {NAV_ITEMS.map(({ to, label }) => (
-              <NavLink
-                key={to}
-                to={to}
-                className="block transition-colors"
-                style={({ isActive }) => ({
-                  padding: '10px 14px',
-                  margin: '1px 0',
-                  fontSize: 14,
-                  fontWeight: isActive ? 700 : 500,
-                  color: isActive ? INK : INACTIVE,
-                  borderRadius: 4,
-                  background: isActive ? ACTIVE_BG_PANEL : 'transparent',
-                })}
-              >
-                {label}
-              </NavLink>
-            ))}
-          </nav>
-
-          <div
-            style={{
-              padding: '16px 20px',
-              borderTop: '1px solid rgba(58,46,40,0.12)',
-            }}
-          >
-            <div style={{ fontSize: 13, fontWeight: 600 }}>Pete Bender</div>
-            <div
-              className="font-mono"
-              style={{ fontSize: 11, color: 'rgba(58,46,40,0.55)', marginTop: 2 }}
+        {/* User block */}
+        {expanded ? (
+          <div style={{
+            padding: '12px 20px 16px',
+            borderTop: '1px solid rgba(58,46,40,0.12)',
+          }}>
+            <div style={{ fontSize: 13, fontWeight: 600 }}>
+              {user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User'}
+            </div>
+            <div className="font-mono" style={{ fontSize: 11, color: 'rgba(58,46,40,0.55)', marginTop: 2 }}>
+              {user?.email}
+            </div>
+            <button
+              onClick={signOut}
+              className="mt-2 text-xs font-medium hover:underline"
+              style={{ color: 'rgba(58,46,40,0.55)', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
             >
-              pete@twodudes.com
+              Sign out
+            </button>
+          </div>
+        ) : (
+          <div className="flex justify-center" style={{ paddingBottom: 16 }}>
+            <div
+              className="rounded-full grid place-items-center font-bold"
+              style={{
+                width: 32, height: 32, background: INK, color: '#fff', fontSize: 12,
+              }}
+              title={user?.email}
+            >
+              {(user?.user_metadata?.full_name || user?.email || '??')
+                .split(/[\s@]/)
+                .filter(Boolean)
+                .slice(0, 2)
+                .map(s => s[0].toUpperCase())
+                .join('')}
             </div>
           </div>
-        </div>
+        )}
       </aside>
 
-      {/* Main area */}
+      {/* Main */}
       <div className="flex-1 flex flex-col min-w-0">
         <main className="flex-1 overflow-auto bg-surface">
           <Outlet />

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Wireframe — Projects Dashboard · Two Dudes</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>html,body,#root{height:100%;margin:0}</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="variations.jsx"></script>
+<script type="text/babel">
+const { useState } = React;
+
+const NOTES_A = [
+  ['Status bar as eyebrow', 'Label + job count + $ in flight up top. Tells you the health of the whole book at a glance before you touch a filter.'],
+  ['KPI strip', 'Four always-visible metrics. Orange only on the one that needs attention — "Need to Invoice" has overdue items. Sparingly-used accent = meaningful.'],
+  ['Filter rail + Save View', 'Power-user density. Every filter is a pill, stacked view tabs are named saved queries. "Save view" always visible on the right so people build their own workspace.'],
+  ['Table density + sort', 'Zebra rows, mono numerics, inline progress bar + percent. 8 columns fit the 1440 width comfortably. PM column is a person name, not an avatar — matches how Pete actually talks about jobs.'],
+];
+
+const NOTES_B = [
+  ['Pipeline as primary view', 'Stages match the real flow: Not Scheduled → Scheduled → In Progress → Need to Invoice → Complete. Count + $ total per column, so column health is readable in one second.'],
+  ['Need to Invoice = orange column', 'This is where revenue leaks. Left-border accent on the overdue card + subtle orange dot on the column header draws the eye without shouting.'],
+];
+
+const NOTES_C = [
+  ['Health strip replaces KPI strip', 'For the "my queue" persona (a PM with ~10 jobs), raw revenue is less useful than triage. On track / Watch / At risk / Action — direct routing to the cards below.'],
+  ['Card grid, high signal', 'Each card surfaces exactly what a PM asks: what stage, what%, GP trend, when\u2019s it due, any alerts. The yellow "Materials backorder" note pattern is how we surface context without opening a drawer.'],
+  ['Action-needed pin', 'A pin on the one card that needs a click today — the "$8.4K Dudes HQ, invoice today". This pattern is tweakable: system can generate these automatically from rules.'],
+];
+
+function Notes({ title, subtitle, items }) {
+  return (
+    <div style={{ width: 340, flexShrink: 0, padding: '0 8px' }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: WF.ink, marginBottom: 4, letterSpacing: '-0.01em' }}>{title}</div>
+      <div style={{ fontSize: 12, color: WF.mute, marginBottom: 18, lineHeight: 1.5 }}>{subtitle}</div>
+      <ol style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {items.map(([t, b], i) => (
+          <li key={i} style={{ display: 'flex', gap: 10 }}>
+            <div style={{ width: 22, height: 22, borderRadius: 999, background: WF.orange, color: '#fff', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700 }}>{i + 1}</div>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: WF.ink, marginBottom: 3 }}>{t}</div>
+              <div style={{ fontSize: 12, color: WF.text, lineHeight: 1.5 }}>{b}</div>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
+function WireArtboard({ label, notes, children }) {
+  return (
+    <div style={{ display: 'flex', gap: 28, flexShrink: 0, alignItems: 'flex-start' }}>
+      <DCArtboard label={label} width={1280} height={820}>
+        {children}
+      </DCArtboard>
+      {notes}
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <DesignCanvas>
+      <div style={{ padding: '20px 60px 30px', maxWidth: 'max-content' }}>
+        <div style={{ fontSize: 28, fontWeight: 700, color: '#1a1a1a', letterSpacing: '-0.02em' }}>Wireframe · Projects Dashboard</div>
+        <div style={{ fontSize: 14, color: 'rgba(60,50,40,0.65)', marginTop: 6, maxWidth: 760, lineHeight: 1.5 }}>
+          Three structural takes on the central Projects surface. Mid-fi — grayscale with real data and real hierarchy, one accent orange reserved for meaningful emphasis. Desktop 1440.
+        </div>
+        <div style={{ marginTop: 20, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {['Focus: info hierarchy + data density', 'Persona: owner (Pete) + PMs', '1440 × 820', 'Grayscale + 1 accent'].map(t => (
+            <div key={t} style={{ fontSize: 11, fontWeight: 500, color: '#5a4a2a', background: 'rgba(0,0,0,0.05)', padding: '4px 10px', borderRadius: 3 }}>{t}</div>
+          ))}
+        </div>
+      </div>
+
+      <DCSection title="A · Filter-heavy list" subtitle="The power-user default. Max density, saved views, every column sortable. Best for owners triaging the whole book.">
+        <WireArtboard label="projects/list · 1280 × 820" notes={<Notes title="Design notes" subtitle="Why this layout works for owners." items={NOTES_A} />}>
+          <VariationA />
+        </WireArtboard>
+      </DCSection>
+
+      <DCSection title="B · Pipeline kanban" subtitle="Stage-first. Reveals flow problems (too much in Need-to-Invoice, not enough in Scheduled). Best for weekly ops review.">
+        <WireArtboard label="projects/board · 1280 × 820" notes={<Notes title="Design notes" subtitle="Why the board is the right lens here." items={NOTES_B} />}>
+          <VariationB />
+        </WireArtboard>
+      </DCSection>
+
+      <DCSection title="C · Health cards" subtitle="For PMs with 8–15 active jobs. Triage-first: health strip routes you to the cards that need action today.">
+        <WireArtboard label="projects/cards · 1280 × 820" notes={<Notes title="Design notes" subtitle="Why cards beat tables at the PM scale." items={NOTES_C} />}>
+          <VariationC />
+        </WireArtboard>
+      </DCSection>
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

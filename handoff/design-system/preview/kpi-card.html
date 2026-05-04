@@ -1,0 +1,38 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../colors_and_type.css"><style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--td-bg-muted);font-family:var(--font-body);padding:28px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.card{background:#fff;border:1px solid var(--td-border);border-radius:8px;padding:18px;box-shadow:var(--shadow-card)}
+.lbl{font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--td-text-muted)}
+.val{font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-weight:500;font-size:28px;color:var(--td-text-primary);margin-top:8px;letter-spacing:-0.01em}
+.sub{font-size:12px;color:var(--td-text-secondary);margin-top:4px;display:flex;align-items:center;gap:6px}
+.up{color:var(--td-success);font-family:var(--font-mono);font-weight:500}
+.down{color:var(--td-error);font-family:var(--font-mono);font-weight:500}
+.spark{margin-top:10px;height:32px;display:flex;align-items:flex-end;gap:2px}
+.spark span{flex:1;background:var(--td-orange-light);border-radius:1px 1px 0 0}
+.spark span.now{background:var(--td-orange)}
+</style></head><body>
+<div class="grid">
+  <div class="card">
+    <div class="lbl">MTD Revenue</div>
+    <div class="val">$284,150</div>
+    <div class="sub"><span class="up">▲ 12.4%</span> vs last month</div>
+    <div class="spark"><span style="height:40%"></span><span style="height:55%"></span><span style="height:48%"></span><span style="height:62%"></span><span style="height:58%"></span><span style="height:72%"></span><span class="now" style="height:85%"></span></div>
+  </div>
+  <div class="card">
+    <div class="lbl">Jobs In Progress</div>
+    <div class="val">17</div>
+    <div class="sub"><span style="color:var(--td-text-muted)">4 need attention</span></div>
+  </div>
+  <div class="card">
+    <div class="lbl">GP Margin</div>
+    <div class="val">28.4%</div>
+    <div class="sub"><span class="up">▲ 1.8pp</span> vs target</div>
+  </div>
+  <div class="card">
+    <div class="lbl">Need to Invoice</div>
+    <div class="val">$62,800</div>
+    <div class="sub"><span class="down">3 over 30 days</span></div>
+  </div>
+</div>
+</body></html>

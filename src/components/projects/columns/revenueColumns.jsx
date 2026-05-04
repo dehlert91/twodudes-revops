@@ -46,11 +46,25 @@ export const revenueColumns = [
     cell: ({ getValue }) => <span className="font-mono">{fmtRate(getValue())}</span>,
   },
   {
+    id: 'contract_sales_rate',
+    accessorKey: 'contract_sales_rate',
+    header: 'Contract $/hr',
+    size: 120,
+    cell: ({ getValue }) => <span className="font-mono">{fmtRate(getValue())}</span>,
+  },
+  {
     id: 'co_hours',
     accessorKey: 'co_hours',
     header: 'CO Hours',
     size: 100,
     cell: ({ getValue }) => <span className="font-mono">{fmtNum(getValue())}</span>,
+  },
+  {
+    id: 'co_sales_rate',
+    accessorKey: 'co_sales_rate',
+    header: 'CO $/hr',
+    size: 100,
+    cell: ({ getValue }) => <span className="font-mono">{fmtRate(getValue())}</span>,
   },
 ]
 

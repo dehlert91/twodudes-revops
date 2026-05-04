@@ -1,0 +1,35 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../colors_and_type.css"><style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#fff;font-family:var(--font-body);padding:28px;color:var(--td-text-primary)}
+.group{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+.lbl{font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--td-text-muted);width:110px}
+.badge{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-body);font-weight:600;font-size:11px;letter-spacing:0.04em;text-transform:uppercase;padding:4px 8px;border-radius:3px;border:1px solid transparent}
+.b-default{background:#F4F4F4;color:#434343;border-color:#E0E0E0}
+.b-primary{background:rgba(229,122,58,0.12);color:#B8561E;border-color:rgba(229,122,58,0.3)}
+.b-success{background:rgba(74,140,92,0.12);color:#2E6B3F;border-color:rgba(74,140,92,0.3)}
+.b-warning{background:rgba(229,122,58,0.12);color:#B8561E;border-color:rgba(229,122,58,0.3)}
+.b-error{background:rgba(192,57,43,0.12);color:#8B2519;border-color:rgba(192,57,43,0.3)}
+.b-info{background:rgba(41,128,185,0.12);color:#1F5E87;border-color:rgba(41,128,185,0.3)}
+.dot{width:6px;height:6px;border-radius:999px}
+</style></head><body>
+<div class="group"><span class="lbl">Status</span>
+  <span class="badge b-default"><span class="dot" style="background:#8E8E8E"></span>Not Scheduled</span>
+  <span class="badge b-info"><span class="dot" style="background:#2980B9"></span>Scheduled</span>
+  <span class="badge b-warning"><span class="dot" style="background:#E57A3A"></span>In Progress</span>
+  <span class="badge b-success"><span class="dot" style="background:#4A8C5C"></span>Complete</span>
+  <span class="badge b-error"><span class="dot" style="background:#C0392B"></span>Blocked</span>
+</div>
+<div class="group"><span class="lbl">Pipeline stage</span>
+  <span class="badge b-default">Lead</span>
+  <span class="badge b-info">Estimate Sent</span>
+  <span class="badge b-warning">Awaiting PO</span>
+  <span class="badge b-primary">In Progress</span>
+  <span class="badge b-success">Invoiced</span>
+</div>
+<div class="group"><span class="lbl">Segment</span>
+  <span class="badge b-default">RDO</span>
+  <span class="badge b-default">RGC</span>
+  <span class="badge b-default">CDO</span>
+  <span class="badge b-default">CGC</span>
+</div>
+</body></html>

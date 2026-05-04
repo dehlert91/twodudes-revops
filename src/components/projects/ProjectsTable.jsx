@@ -8,9 +8,11 @@ import {
 import { allColumns } from './columns'
 import { STAGE_COLORS } from './stageConfig'
 import { Badge } from '../ui'
+import { SortIndicator } from '../SortIndicator'
+import { rowMatchesFilter } from './columns/tagColumns'
 import { fmtCurrency, fmtPct } from './columns/formatters'
 
-const PINNED_IDS = ['po_number', 'job_name']
+const PINNED_IDS = ['po_number']
 
 function EditableCell({ getValue, row, column, onCellEdit }) {
   const initialValue = getValue()
@@ -109,6 +111,8 @@ export function ProjectsTable({
   columnSizing,
   onColumnSizingChange,
   onColumnOrderChange,
+  sorting: sortingProp,
+  onSortingChange: onSortingChangeProp,
   onRowClick,
   onCellEdit,
   page = 0,
@@ -116,6 +120,11 @@ export function ProjectsTable({
   totalCount = 0,
   pageSize = 100,
 }) {
+  // If parent doesn't control sorting, manage it internally
+  const [internalSorting, setInternalSorting] = useState([])
+  const sorting = sortingProp ?? internalSorting
+  const onSortingChange = onSortingChangeProp ?? setInternalSorting
+
   const tableContainerRef = useRef(null)
   const [draggedCol, setDraggedCol] = useState(null)
   const [dropTarget, setDropTarget] = useState(null)
@@ -130,29 +139,57 @@ export function ProjectsTable({
       if (pmFilter.length > 0 && !pmFilter.includes(row.project_manager)) return false
       if (salesRepFilter.length > 0 && !salesRepFilter.includes(row.sales_rep)) return false
       for (const [key, vals] of Object.entries(dynamicFilters)) {
-        if (vals.length > 0 && !vals.includes(String(row[key] ?? ''))) return false
+        if (!rowMatchesFilter(row, key, vals)) return false
       }
       return true
     })
   }, [data, globalFilter, stageFilter, segmentFilter, pmFilter, salesRepFilter, dynamicFilters])
 
-  // Client-side pagination on filtered results
-  const filteredTotal = filtered.length
+  // Sort filtered data BEFORE pagination so sort applies across all rows
+  const sortedData = useMemo(() => {
+    if (!sorting.length) return filtered
+    const sorted = [...filtered]
+    sorted.sort((a, b) => {
+      for (const { id, desc } of sorting) {
+        const aVal = a[id]
+        const bVal = b[id]
+        // Nulls last
+        if (aVal == null && bVal == null) continue
+        if (aVal == null) return 1
+        if (bVal == null) return -1
+        // Numeric comparison
+        if (typeof aVal === 'number' && typeof bVal === 'number') {
+          if (aVal !== bVal) return desc ? bVal - aVal : aVal - bVal
+          continue
+        }
+        // String comparison
+        const cmp = String(aVal).localeCompare(String(bVal), undefined, { sensitivity: 'base' })
+        if (cmp !== 0) return desc ? -cmp : cmp
+      }
+      return 0
+    })
+    return sorted
+  }, [filtered, sorting])
+
+  // Client-side pagination on sorted results
+  const filteredTotal = sortedData.length
   const clientTotalPages = Math.ceil(filteredTotal / pageSize)
   const paginatedData = useMemo(() => {
     const start = page * pageSize
-    return filtered.slice(start, start + pageSize)
-  }, [filtered, page, pageSize])
+    return sortedData.slice(start, start + pageSize)
+  }, [sortedData, page, pageSize])
 
   const table = useReactTable({
     data: paginatedData,
     columns: allColumns,
     state: {
+      sorting,
       columnVisibility,
       columnOrder,
       columnPinning: { left: PINNED_IDS },
       columnSizing: columnSizing || {},
     },
+    onSortingChange: onSortingChange,
     onColumnSizingChange: onColumnSizingChange,
     columnResizeMode: 'onEnd',
     enableColumnResizing: false, // we handle resize ourselves for performance
@@ -327,6 +364,8 @@ export function ProjectsTable({
                 {hg.headers.map(header => {
                   const pinned = isPinned(header.id)
                   const lastPin = isLastPinned(header.id)
+                  const sortable = header.column.getCanSort()
+                  const sortDir = header.column.getIsSorted() || null
                   return (
                     <th
                       key={header.id}
@@ -335,29 +374,32 @@ export function ProjectsTable({
                       onDragOver={e => handleDragOver(e, header.id)}
                       onDrop={e => handleDrop(e, header.id)}
                       onDragEnd={handleDragEnd}
-                      className={`relative px-3 py-[10px] text-left text-[10px] font-bold text-muted uppercase tracking-[0.08em] whitespace-nowrap overflow-hidden text-ellipsis select-none ${
-                        header.column.getCanSort() ? 'cursor-pointer hover:text-charcoal' : ''
-                      } ${pinned ? 'sticky z-20' : 'cursor-grab'} ${
-                        lastPin ? 'shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]' : ''
-                      } ${dropTarget === header.id ? 'border-l-2 border-l-orange' : ''}`}
+                      onClick={sortable ? header.column.getToggleSortingHandler() : undefined}
+                      className={`group/th relative px-3 py-[10px] text-left text-[10px] font-bold uppercase tracking-[0.08em] whitespace-nowrap overflow-hidden text-ellipsis select-none transition-colors ${
+                        sortable ? 'cursor-pointer text-muted hover:text-charcoal hover:bg-surface-muted' : 'text-muted'
+                      } ${sortDir ? 'text-charcoal' : ''} ${
+                        pinned ? 'sticky z-20' : (sortable ? '' : 'cursor-grab')
+                      } ${lastPin ? 'shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]' : ''} ${
+                        dropTarget === header.id ? 'border-l-2 border-l-orange' : ''
+                      }`}
                       style={{
                         width: `var(--header-${header.id}-size)`,
                         ...(pinned ? { left: pinnedOffsets[header.id] + 'px', backgroundColor: 'var(--td-bg-subtle)' } : {}),
                       }}
                     >
-                      <span onClick={header.column.getToggleSortingHandler()}>
+                      <span className="inline-flex items-center">
                         {flexRender(header.column.columnDef.header, header.getContext())}
-                        {header.column.getIsSorted() === 'asc' && ' ↑'}
-                        {header.column.getIsSorted() === 'desc' && ' ↓'}
+                        {sortable && <SortIndicator direction={sortDir} />}
                       </span>
                       <div
                         onMouseDown={getResizeHandler(header)}
-                        onDoubleClick={() => header.column.resetSize()}
-                        className={`absolute right-0 top-0 h-full w-4 -mr-2 cursor-col-resize select-none touch-none group/resize ${
+                        onClick={(e) => e.stopPropagation()}
+                        onDoubleClick={(e) => { e.stopPropagation(); header.column.resetSize() }}
+                        className={`absolute right-0 top-0 h-full w-4 -mr-2 cursor-col-resize select-none touch-none ${
                           header.column.getIsResizing() ? 'bg-orange/20' : ''
                         }`}
                       >
-                        <div className={`mx-auto h-full w-0.5 transition-colors group-hover/resize:bg-orange ${
+                        <div className={`mx-auto h-full w-0.5 transition-colors group-hover/th:bg-line-strong hover:!bg-orange ${
                           header.column.getIsResizing() ? 'bg-orange' : 'bg-transparent'
                         }`} />
                       </div>

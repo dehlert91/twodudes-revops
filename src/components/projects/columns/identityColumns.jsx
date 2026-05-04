@@ -5,19 +5,15 @@ export const identityColumns = [
   {
     id: 'po_number',
     accessorKey: 'po_number',
-    header: 'PO #',
-    size: 110,
-    enableHiding: false, // always visible — it's the universal key
-    cell: ({ getValue }) => (
-      <span className="font-mono font-semibold text-charcoal">{getValue()}</span>
-    ),
-  },
-  {
-    id: 'job_name',
-    accessorKey: 'job_name',
-    header: 'Job Name',
-    size: 220,
+    header: 'Project',
+    size: 280,
     enableHiding: false,
+    cell: ({ getValue, row }) => (
+      <div className="leading-tight">
+        <div className="font-mono font-semibold text-charcoal">{getValue()}</div>
+        <div className="text-xs text-muted truncate">{row.original.job_name || '—'}</div>
+      </div>
+    ),
   },
   {
     id: 'stage',
@@ -28,11 +24,7 @@ export const identityColumns = [
     cell: ({ getValue }) => {
       const stage = getValue()
       const cfg = STAGE_COLORS[stage] ?? { tone: 'default', dot: 'bg-muted' }
-      return (
-        <Badge tone={cfg.tone} dot={cfg.dot}>
-          {stage ?? '—'}
-        </Badge>
-      )
+      return <Badge tone={cfg.tone} dot={cfg.dot}>{stage ?? '—'}</Badge>
     },
   },
   {
@@ -100,6 +92,30 @@ export const identityColumns = [
     size: 160,
   },
   {
+    id: 'city',
+    accessorKey: 'city',
+    header: 'City',
+    size: 130,
+  },
+  {
+    id: 'state',
+    accessorKey: 'state',
+    header: 'State',
+    size: 70,
+  },
+  {
+    id: 'zip_code',
+    accessorKey: 'zip_code',
+    header: 'Zip',
+    size: 80,
+  },
+  {
+    id: 'job_site_address',
+    accessorKey: 'job_site_address',
+    header: 'Job Site Address',
+    size: 220,
+  },
+  {
     id: 'estimated_start_date',
     accessorKey: 'estimated_start_date',
     header: 'Start',
@@ -120,6 +136,97 @@ export const identityColumns = [
     header: 'Days',
     size: 70,
     meta: { editable: true, inputType: 'number' },
+  },
+  {
+    id: 'date_job_sold',
+    accessorKey: 'date_job_sold',
+    header: 'Date Sold',
+    size: 110,
+    cell: ({ getValue }) => fmtDate(getValue()),
+  },
+  {
+    id: 'division_code',
+    accessorKey: 'division_code',
+    header: 'Division',
+    size: 100,
+  },
+  {
+    id: 'division_name',
+    accessorKey: 'division_name',
+    header: 'Division Name',
+    size: 160,
+  },
+  {
+    id: 'source_attribution',
+    accessorKey: 'source_attribution',
+    header: 'Source',
+    size: 130,
+  },
+  {
+    id: 'prev_or_new_customer',
+    accessorKey: 'prev_or_new_customer',
+    header: 'New / Prev',
+    size: 110,
+  },
+  {
+    id: 'specialty_rate',
+    accessorKey: 'specialty_rate',
+    header: 'Specialty Rate',
+    size: 120,
+    meta: { editable: true, inputType: 'number' },
+    cell: ({ getValue }) => {
+      const v = getValue()
+      return v != null ? <span className="font-mono">${Number(v).toFixed(2)}</span> : '—'
+    },
+  },
+  {
+    id: 'specialty_payroll_billing',
+    accessorKey: 'specialty_payroll_billing',
+    header: 'Specialty Payroll/Billing',
+    size: 220,
+    cell: ({ getValue }) => {
+      const v = getValue()
+      if (!v) return <span className="text-muted">—</span>
+      const tags = String(v).split(';').map(t => t.trim()).filter(Boolean)
+      return (
+        <div className="flex flex-wrap gap-1">
+          {tags.map(tag => (
+            <span
+              key={tag}
+              className="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-orange/10 text-[#B8561E] border border-orange/30 whitespace-nowrap"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+      )
+    },
+  },
+  {
+    id: 'prev_wage_rate',
+    accessorKey: 'prev_wage_rate',
+    header: 'Prev Wage Rate',
+    size: 130,
+    meta: { editable: true, inputType: 'number' },
+    cell: ({ getValue }) => {
+      const v = getValue()
+      return v != null ? <span className="font-mono">${Number(v).toFixed(2)}</span> : '—'
+    },
+  },
+  {
+    id: 'hubspot_url',
+    accessorKey: 'hubspot_url',
+    header: 'HubSpot',
+    size: 100,
+    cell: ({ getValue }) => {
+      const url = getValue()
+      return url ? (
+        <a href={url} target="_blank" rel="noopener noreferrer"
+           className="text-orange hover:underline text-xs" onClick={e => e.stopPropagation()}>
+          Open ↗
+        </a>
+      ) : '—'
+    },
   },
 ]
 

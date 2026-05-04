@@ -1,0 +1,40 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../colors_and_type.css"><style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#fff;font-family:var(--font-body);padding:24px;color:var(--td-text-primary)}
+h3{font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--td-text-muted);margin-bottom:12px}
+.row{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.bar{background:var(--td-orange);height:14px;border-radius:2px}
+.lbl{font-family:var(--font-mono);font-size:11px;color:var(--td-text-secondary);min-width:110px}
+.section{margin-bottom:24px}
+.radii{display:flex;gap:14px;align-items:flex-end}
+.r{width:72px;height:72px;background:var(--td-bg-muted);border:1px solid var(--td-border);display:flex;align-items:flex-end;justify-content:center;padding:6px;font-family:var(--font-mono);font-size:10px;color:var(--td-text-secondary)}
+.shadow-row{display:flex;gap:16px;margin-top:8px}
+.sh{width:120px;height:72px;background:#fff;border-radius:6px;display:flex;align-items:flex-end;padding:8px;font-family:var(--font-mono);font-size:10px;color:var(--td-text-secondary)}
+.sh.a{box-shadow:var(--shadow-card)}
+.sh.b{box-shadow:var(--shadow-elevated)}
+</style></head><body>
+<div class="section">
+  <h3>Spacing scale</h3>
+  <div class="row"><span class="lbl">--space-xs · 4</span><div class="bar" style="width:4px"></div></div>
+  <div class="row"><span class="lbl">--space-sm · 8</span><div class="bar" style="width:8px"></div></div>
+  <div class="row"><span class="lbl">--space-md · 16</span><div class="bar" style="width:16px"></div></div>
+  <div class="row"><span class="lbl">--space-lg · 24</span><div class="bar" style="width:24px"></div></div>
+  <div class="row"><span class="lbl">--space-xl · 40</span><div class="bar" style="width:40px"></div></div>
+  <div class="row"><span class="lbl">--space-2xl · 64</span><div class="bar" style="width:64px"></div></div>
+</div>
+<div class="section">
+  <h3>Radii</h3>
+  <div class="radii">
+    <div class="r" style="border-radius:4px">4</div>
+    <div class="r" style="border-radius:8px">8</div>
+    <div class="r" style="border-radius:12px">12</div>
+  </div>
+</div>
+<div class="section">
+  <h3>Shadows</h3>
+  <div class="shadow-row">
+    <div class="sh a">card</div>
+    <div class="sh b">elevated</div>
+  </div>
+</div>
+</body></html>

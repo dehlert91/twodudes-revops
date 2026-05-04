@@ -8,11 +8,15 @@ export function ProjectsKPIBar({ rows }) {
     if (n === 0) return null
 
     const totalRevenue = sum(rows, 'total_revenue')
-    const avgGP = avg(rows, 'est_gp_pct')
-    const avgComplete = avg(rows, 'pct_complete')
+    const totalGP = sum(rows, 'est_gross_profit')
+    const avgGP = totalRevenue ? totalGP / totalRevenue : null
+    const totalProjectHours = sum(rows, 'total_project_hours')
     const totalHours = sum(rows, 'total_hours')
+    const gpPerHour = totalProjectHours ? totalGP / totalProjectHours : null
+    const salesRate = totalProjectHours ? totalRevenue / totalProjectHours : null
+    const productivity = totalProjectHours ? totalHours / totalProjectHours : null
 
-    return { n, totalRevenue, avgGP, avgComplete, totalHours }
+    return { n, totalRevenue, avgGP, gpPerHour, salesRate, productivity }
   }, [rows])
 
   if (!stats) return null
@@ -20,12 +24,13 @@ export function ProjectsKPIBar({ rows }) {
   const gpTone = gpSubTone(stats.avgGP)
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-4">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-4">
       <KpiCard label="Active Jobs" value={stats.n.toLocaleString()} />
       <KpiCard label="Total Revenue" value={fmtCurrency(stats.totalRevenue)} />
       <KpiCard label="Avg GP%" value={fmtPct(stats.avgGP)} subTone={gpTone} />
-      <KpiCard label="Avg % Complete" value={fmtPct(stats.avgComplete)} />
-      <KpiCard label="Total Hours" value={stats.totalHours.toLocaleString('en-US', { maximumFractionDigits: 0 })} />
+      <KpiCard label="GP $/hr" value={fmtCurrency(stats.gpPerHour)} />
+      <KpiCard label="Sales Rate" value={fmtCurrency(stats.salesRate)} />
+      <KpiCard label="Productivity" value={stats.productivity != null ? fmtPct(stats.productivity) : '—'} />
     </div>
   )
 }

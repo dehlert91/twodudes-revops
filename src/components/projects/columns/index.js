@@ -3,6 +3,10 @@ import { revenueColumns } from './revenueColumns.jsx'
 import { progressColumns } from './progressColumns.jsx'
 import { costColumns } from './costColumns.jsx'
 import { profitColumns } from './profitColumns.jsx'
+import { billingColumns } from './billingColumns.jsx'
+import { allocationColumns } from './allocationColumns.jsx'
+
+export { identityColumns, revenueColumns, progressColumns, costColumns, profitColumns, billingColumns, allocationColumns }
 
 export const allColumns = [
   ...identityColumns,
@@ -10,12 +14,13 @@ export const allColumns = [
   ...progressColumns,
   ...costColumns,
   ...profitColumns,
+  ...billingColumns,
+  ...allocationColumns,
 ]
 
-// Columns visible in the standard view (in display order)
+// Columns visible in the standard view (in display order) — unchanged
 const STANDARD_VISIBLE_IDS = [
   'po_number',
-  'job_name',
   'stage',
   'tracking_mode',
   'project_manager',
@@ -37,15 +42,12 @@ const STANDARD_VISIBLE_IDS = [
   'est_total_remaining_cost',
 ]
 
-// TanStack Table requires ALL column IDs in columnOrder.
-// Visible columns first (in desired order), then hidden ones appended.
 export const STANDARD_VIEW_ORDER = (() => {
   const visibleSet = new Set(STANDARD_VISIBLE_IDS)
   const hidden = allColumns.map(c => c.id).filter(id => !visibleSet.has(id))
   return [...STANDARD_VISIBLE_IDS, ...hidden]
 })()
 
-// Build visibility map: true for standard visible, false for the rest
 export const STANDARD_VIEW_VISIBILITY = (() => {
   const vis = {}
   const standardSet = new Set(STANDARD_VISIBLE_IDS)

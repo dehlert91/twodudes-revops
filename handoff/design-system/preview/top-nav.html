@@ -1,0 +1,31 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../colors_and_type.css"><style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--td-bg-muted);font-family:var(--font-body);padding:0}
+.strip{height:6px;background:var(--td-orange)}
+.top{display:flex;align-items:center;background:#fff;padding:0 24px;border-bottom:1px solid var(--td-border);height:64px;gap:32px}
+.brand{display:flex;align-items:center;gap:10px}
+.brand img{height:28px}
+.nav{display:flex;gap:4px;flex:1}
+.nav a{padding:8px 14px;font-size:14px;font-weight:500;color:var(--td-text-secondary);text-decoration:none;border-radius:4px}
+.nav a:hover{background:var(--td-bg-muted);color:var(--td-text-primary)}
+.nav a.active{color:var(--td-orange);font-weight:600}
+.right{display:flex;align-items:center;gap:14px;color:var(--td-text-secondary);font-size:13px}
+.right .email{font-family:var(--font-mono)}
+.avatar{width:32px;height:32px;border-radius:999px;background:var(--td-orange);color:#fff;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center}
+</style></head><body>
+<div class="strip"></div>
+<header class="top">
+  <div class="brand"><img src="../assets/logo-horizontal.png" alt="Two Dudes"></div>
+  <nav class="nav">
+    <a>Revenue</a>
+    <a>Schedule</a>
+    <a class="active">Projects</a>
+    <a>Finance</a>
+    <a>Benchmarks</a>
+  </nav>
+  <div class="right">
+    <span class="email">pete@twodudes.com</span>
+    <div class="avatar">PB</div>
+  </div>
+</header>
+</body></html>

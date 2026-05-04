@@ -9,10 +9,11 @@ import { ProjectsKanban } from '../components/projects/ProjectsKanban'
 import { ProjectsHealthCards } from '../components/projects/ProjectsHealthCards'
 import { ProjectDetailPanel } from '../components/projects/ProjectDetailPanel'
 import { updateProject } from '../lib/supabase'
+import { rowMatchesFilter } from '../components/projects/columns/tagColumns'
 
 export function BenchmarksPage() {
   const { data, loading, error, refetch, setData, page, goToPage, totalCount, pageSize, kpiRows } = useProjectDetails('benchmark')
-  const { activeViewName, listViews, loadView, saveView, deleteView, standardView } = useTableViews()
+  const { activeViewName, listViews, loadView, saveView, patchView, deleteView, standardView } = useTableViews()
 
   const [globalFilter, setGlobalFilter] = useState('')
   const [stageFilter, setStageFilter] = useState([])
@@ -30,7 +31,11 @@ export function BenchmarksPage() {
   const [columnVisibility, setColumnVisibility] = useState(standardView.columnVisibility)
   const [columnSizing, setColumnSizing] = useState(standardView.columnSizing)
 
-  const [selectedProject, setSelectedProject] = useState(null)
+  const [selectedPO, setSelectedPO] = useState(null)
+  const selectedProject = useMemo(() => {
+    if (!selectedPO) return null
+    return data.find(r => r.po_number === selectedPO) ?? null
+  }, [selectedPO, data])
   const [viewMode, setViewMode] = useState('list')
   const [editError, setEditError] = useState(null)
 
@@ -67,7 +72,7 @@ export function BenchmarksPage() {
       if (pmFilter.length > 0 && !pmFilter.includes(row.project_manager)) return false
       if (salesRepFilter.length > 0 && !salesRepFilter.includes(row.sales_rep)) return false
       for (const [key, vals] of Object.entries(dynamicFilters)) {
-        if (vals.length > 0 && !vals.includes(String(row[key] ?? ''))) return false
+        if (!rowMatchesFilter(row, key, vals)) return false
       }
       if (globalFilter) {
         const q = globalFilter.toLowerCase()
@@ -109,7 +114,14 @@ export function BenchmarksPage() {
         onSalesRepFilter={v => { setSalesRepFilter(v); goToPage(0) }}
         dynamicFilters={dynamicFilters}
         onDynamicFilterChange={handleDynamicFilterChange}
-        allData={kpiRows}
+        allData={data}
+        columnVisibility={columnVisibility}
+        onColumnVisibilityChange={setColumnVisibility}
+        columnOrder={columnOrder}
+        onColumnOrderChange={newOrder => {
+          setColumnOrder(newOrder)
+          patchView(activeViewName, { columnOrder: newOrder })
+        }}
         activeViewName={activeViewName}
         viewNames={listViews()}
         onLoadView={handleLoadView}
@@ -135,7 +147,7 @@ export function BenchmarksPage() {
           columnSizing={columnSizing}
           onColumnSizingChange={setColumnSizing}
           onColumnOrderChange={setColumnOrder}
-          onRowClick={setSelectedProject}
+          onRowClick={r => setSelectedPO(r.po_number)}
           onCellEdit={handleCellEdit}
           page={page}
           goToPage={goToPage}
@@ -145,15 +157,15 @@ export function BenchmarksPage() {
       )}
 
       {viewMode === 'board' && (
-        <ProjectsKanban data={filteredForKPI} onRowClick={setSelectedProject} />
+        <ProjectsKanban data={filteredForKPI} onRowClick={r => setSelectedPO(r.po_number)} />
       )}
 
       {viewMode === 'cards' && (
-        <ProjectsHealthCards data={filteredForKPI} onRowClick={setSelectedProject} />
+        <ProjectsHealthCards data={filteredForKPI} onRowClick={r => setSelectedPO(r.po_number)} />
       )}
 
       {selectedProject && (
-        <ProjectDetailPanel project={selectedProject} onClose={() => setSelectedProject(null)} />
+        <ProjectDetailPanel project={selectedProject} onClose={() => setSelectedPO(null)} onCellEdit={handleCellEdit} />
       )}
 
       {editError && (
