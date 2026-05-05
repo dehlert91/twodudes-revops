@@ -1,5 +1,4 @@
 import { useRef, useCallback, useMemo } from 'react'
-import { Link } from 'react-router-dom'
 import {
   useReactTable,
   getCoreRowModel,
@@ -44,10 +43,10 @@ export const ALLOCATION_COLUMNS = [
     header: 'Project',
     size: 300,
     cell: ({ row }) => (
-      <Link to={`/revenue/allocation/${encodeURIComponent(row.original.po_number)}`} className="block leading-tight">
+      <div className="leading-tight">
         <div className="font-mono font-semibold text-charcoal">{row.original.po_number}</div>
         <div className="text-xs text-muted truncate max-w-[280px]">{row.original.job_name}</div>
-      </Link>
+      </div>
     ),
     sortingFn: (a, b) => String(a.original.po_number).localeCompare(String(b.original.po_number)),
   },
@@ -68,6 +67,15 @@ export const ALLOCATION_COLUMNS = [
     cell: ({ getValue }) => {
       const v = getValue()
       return <Badge tone={METHOD_TONES[v] || 'default'}>{v || 'pending'}</Badge>
+    } },
+  { id: 'date_span_pattern', header: 'Span', size: 110,
+    accessorKey: 'date_span_pattern',
+    cell: ({ getValue }) => {
+      const v = getValue()
+      if (!v) return <span className="text-muted">—</span>
+      const tone = v === 'single_month' ? 'success' : v === 'two_month' ? 'info' : 'primary'
+      const label = v.replace('_', ' ')
+      return <Badge tone={tone}>{label}</Badge>
     } },
   { id: 'allocation_pattern', header: 'Pattern', size: 130,
     accessorKey: 'allocation_pattern',
@@ -109,6 +117,7 @@ export function AllocationGrid({
   columnVisibility, onColumnVisibilityChange,
   columnSizing, onColumnSizingChange,
   sorting, onSortingChange,
+  onRowClick,
 }) {
   const containerRef = useRef(null)
 
@@ -205,7 +214,11 @@ export function AllocationGrid({
         </thead>
         <tbody>
           {table.getRowModel().rows.map(row => (
-            <tr key={row.id} className="border-b border-line hover:bg-orange/5 transition-colors">
+            <tr
+              key={row.id}
+              onClick={() => onRowClick?.(row.original)}
+              className={`border-b border-line hover:bg-orange/5 transition-colors ${onRowClick ? 'cursor-pointer' : ''}`}
+            >
               {row.getVisibleCells().map(cell => (
                 <td
                   key={cell.id}

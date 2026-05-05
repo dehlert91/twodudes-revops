@@ -89,6 +89,8 @@ export async function getWipProjects({ divisions = [], segments = [], minUnbille
       .from('project_details')
       .select('*')
       .eq('is_closed', false)
+      // Combined-into-other-project rolls up to parent — never appears in financials
+      .neq('stage', 'Combined into other Project')
       // Benchmarked projects are effectively done — exclude from WIP exposure
       .neq('stage', 'Benchmark in Progress')
       .neq('stage', 'Benchmark Completed')
@@ -129,11 +131,13 @@ export async function getAllocationProjects({ divisions = [], segments = [], onl
       .select(`
         po_number, job_name, segment, division_code, project_manager,
         stage, total_revenue, estimated_start_date, estimated_completion_date,
-        allocation_method, allocation_pattern,
+        allocation_method, allocation_pattern, date_span_pattern,
         allocation_sum_pct, is_allocation_complete,
         allocated_months_count, locked_months_count
       `)
       .eq('is_closed', false)
+      // Combined-into-other-project rolls up to parent — never appears in financials
+      .neq('stage', 'Combined into other Project')
       // Benchmarked projects are effectively done — exclude from allocation work
       .neq('stage', 'Benchmark in Progress')
       .neq('stage', 'Benchmark Completed')
@@ -162,7 +166,7 @@ export async function getAllocationProjects({ divisions = [], segments = [], onl
  * Returns the monthly_revenue rows ordered by period_month plus project header info.
  */
 export async function getProjectAllocation(po_number) {
-  const [hdrRes, mrRes] = await Promise.all([
+  const [hdrRes, mrRes, raRes] = await Promise.all([
     withRetry(() =>
       supabase
         .from('project_details')
@@ -170,7 +174,7 @@ export async function getProjectAllocation(po_number) {
           po_number, job_name, segment, division_code, project_manager, stage,
           total_revenue, total_projected_cost, total_cost_to_date,
           estimated_start_date, estimated_completion_date,
-          allocation_method, allocation_pattern,
+          allocation_method, allocation_pattern, date_span_pattern,
           allocation_sum_pct, is_allocation_complete,
           allocated_months_count, locked_months_count,
           pct_complete, revenue_earned, amount_billed_to_date
@@ -185,12 +189,33 @@ export async function getProjectAllocation(po_number) {
         .eq('po_number', po_number)
         .order('period_month', { ascending: true })
     ),
+    withRetry(() =>
+      supabase
+        .from('revenue_allocations')
+        .select('period_month, is_active_month, cumulative_target_pct, last_auto_pct_complete')
+        .eq('po_number', po_number)
+    ),
   ])
   if (hdrRes.error) throw hdrRes.error
   if (mrRes.error)  throw mrRes.error
+  if (raRes.error)  throw raRes.error
+
+  // Merge V2 ratchet columns from revenue_allocations into the monthly_revenue rows
+  const raByMonth = new Map()
+  for (const r of raRes.data ?? []) raByMonth.set(r.period_month, r)
+  const months = (mrRes.data ?? []).map(m => {
+    const r = raByMonth.get(m.period_month)
+    return {
+      ...m,
+      is_active_month:        r?.is_active_month ?? true,
+      cumulative_target_pct:  r?.cumulative_target_pct ?? null,
+      last_auto_pct_complete: r?.last_auto_pct_complete ?? null,
+    }
+  })
+
   return {
     project: hdrRes.data,
-    months:  mrRes.data ?? [],
+    months,
   }
 }
 
@@ -282,6 +307,8 @@ export async function getBillingProjects({ divisions = [], segments = [] } = {})
         invoice_count, pct_complete, revenue_earned
       `)
       .eq('is_closed', false)
+      // Combined-into-other-project rolls up to parent — never appears in financials
+      .neq('stage', 'Combined into other Project')
       .eq('stage', 'Need to Invoice')
       // Future: .or('stage.eq.Need to Invoice,billing_module_flag.eq.progress_billing')
       .order('unbilled_revenue', { ascending: false, nullsFirst: false })

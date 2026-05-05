@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ProjectAllocationDetail } from '../../components/finance/ProjectAllocationDetail'
 import { getProjectAllocation } from '../../lib/finance/queries'
-import { recomputeAllocation, setManualAllocation } from '../../lib/finance/actions'
+import { recomputeAllocation, setPmForecastAllocation, setMonthActive } from '../../lib/finance/actions'
 import { useAuth } from '../../contexts/AuthContext'
 
 export function AllocationDetailPage() {
@@ -52,18 +52,34 @@ export function AllocationDetailPage() {
 
   async function handleEditCell(period_month, pctNumber0to100) {
     try {
-      await setManualAllocation({
+      await setPmForecastAllocation({
         po_number: po,
         period_month,
         allocated_pct: pctNumber0to100,
         total_revenue: project?.total_revenue ?? 0,
         acting_user: user?.id ?? null,
       })
-      showToast('Manual override saved.')
+      showToast('PM forecast saved.')
       await refetch()
     } catch (e) {
       const msg = e?.message || String(e)
-      // The DB trigger throws when a locked row is touched
+      const friendly = msg.includes('lock') ? 'That month is locked — reopen the month before editing.' : msg
+      showToast(friendly, 'error')
+    }
+  }
+
+  async function handleToggleActive(period_month, currentlyInactive) {
+    try {
+      await setMonthActive({
+        po_number: po,
+        period_month,
+        is_active_month: currentlyInactive, // toggling: if currently inactive → make active
+        acting_user: user?.id ?? null,
+      })
+      showToast(currentlyInactive ? 'Month re-activated.' : 'Month marked inactive.')
+      await refetch()
+    } catch (e) {
+      const msg = e?.message || String(e)
       const friendly = msg.includes('lock') ? 'That month is locked — reopen the month before editing.' : msg
       showToast(friendly, 'error')
     }
@@ -89,6 +105,7 @@ export function AllocationDetailPage() {
         project={project}
         months={months}
         onEditCell={handleEditCell}
+        onToggleActive={handleToggleActive}
         onRecompute={handleRecompute}
         recomputing={recomputing}
       />

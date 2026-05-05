@@ -43,18 +43,24 @@ export async function getProjectPeriodActuals(startDate, endDate) {
 
 /**
  * Merges period actuals into an array of project_details rows.
- * Replaces the all-time cost/hours/billing columns with period values.
- * Static columns (revenue, stage, identity) are unchanged.
  *
- * Also recomputes pct_complete from period costs so the progress
- * column stays meaningful when a date filter is active.
+ * Two modes via the `usePeriodCosts` option:
+ *
+ *   false (default) — "as-of" / cumulative mode (WipSchedulePage):
+ *     Cost/hours columns reflect everything ever incurred through p_end.
+ *     WIP accounting figures (pct_complete, unbilled, cieb, biec) are
+ *     computed from those cumulative values — correct for month-close reports.
+ *
+ *   true — "within-period" mode (WipPage with a date range picker):
+ *     Cost/hours columns reflect ONLY activity between p_start and p_end so
+ *     users can evaluate a single month's labour/materials spend.
+ *     WIP accounting figures still use cumulative values because pct_complete
+ *     and unbilled revenue are inherently project-lifetime concepts.
  */
-export function mergePerioActuals(rows, periodMap) {
+export function mergePerioActuals(rows, periodMap, { usePeriodCosts = false } = {}) {
   return rows.map(row => {
     const p = periodMap.get(row.po_number)
     if (!p) {
-      // No RPC row — project didn't exist during period fetch (shouldn't happen
-      // since RPC returns all projects), so zero out the period-sensitive columns.
       return {
         ...row,
         hours_to_date:        0,
@@ -68,26 +74,36 @@ export function mergePerioActuals(rows, periodMap) {
       }
     }
 
-    // Cumulative through p_end ("as-of" semantics — what was the project's state on the close date?)
-    // Includes legacy stored values for HIST projects with no labor_entries / qbo_expenses records.
-    const hoursToDate    = Number(p.cumulative_hours_end          ?? 0)
-    const laborCost      = Number(p.cumulative_labor_cost_end     ?? 0)
-    const materialCost   = Number(p.cumulative_material_cost_end  ?? 0)
-    const setCost        = Number(p.cumulative_set_cost_end       ?? 0)
-    const totalCost      = Number(p.cumulative_total_cost_end     ?? 0)
-    const billedToDate   = Number(p.cumulative_billed_end         ?? 0)
-    const wipToDate      = Number(p.cumulative_wip_end            ?? 0)
+    // Cumulative through p_end — always used for WIP accounting.
+    const cumulTotalCost  = Number(p.cumulative_total_cost_end     ?? 0)
+    const billedToDate    = Number(p.cumulative_billed_end         ?? 0)
+    const wipToDate       = Number(p.cumulative_wip_end            ?? 0)
 
-    // pct_complete = cumulative cost / projected cost, capped at 1.0.
+    // pct_complete and earned-revenue use cumulative costs regardless of mode.
     const projCost    = Number(row.total_projected_cost ?? 0)
-    const pctComplete = projCost > 0 ? Math.min(1, totalCost / projCost) : 0
+    const pctComplete = projCost > 0 ? Math.min(1, cumulTotalCost / projCost) : 0
+    const revenueEarned = Math.round(Number(row.total_revenue ?? 0) * pctComplete * 100) / 100
 
-    // Revenue earned AS OF p_end: total_revenue × pct_complete_as_of_end.
-    const revenueEarnedAsOfEnd = Math.round(Number(row.total_revenue ?? 0) * pctComplete * 100) / 100
+    const unbilledRevenue         = Math.max(0, Math.round((revenueEarned - billedToDate) * 100) / 100)
+    const costsInExcessOfBillings = Math.max(0, Math.round((revenueEarned - (billedToDate + wipToDate)) * 100) / 100)
+    const billingsInExcessOfCosts = Math.max(0, Math.round((billedToDate - revenueEarned) * 100) / 100)
 
-    const unbilledRevenue          = Math.max(0, Math.round((revenueEarnedAsOfEnd - billedToDate) * 100) / 100)
-    const costsInExcessOfBillings  = Math.max(0, Math.round((revenueEarnedAsOfEnd - (billedToDate + wipToDate)) * 100) / 100)
-    const billingsInExcessOfCosts  = Math.max(0, Math.round((billedToDate - revenueEarnedAsOfEnd) * 100) / 100)
+    // Cost/hours display columns: period-window values when usePeriodCosts, otherwise cumulative.
+    const hoursToDate  = usePeriodCosts
+      ? Number(p.period_hours         ?? 0)
+      : Number(p.cumulative_hours_end ?? 0)
+    const laborCost    = usePeriodCosts
+      ? Number(p.period_labor_cost         ?? 0)
+      : Number(p.cumulative_labor_cost_end ?? 0)
+    const materialCost = usePeriodCosts
+      ? Number(p.period_material_cost         ?? 0)
+      : Number(p.cumulative_material_cost_end ?? 0)
+    const setCost      = usePeriodCosts
+      ? Number(p.period_set_cost         ?? 0)
+      : Number(p.cumulative_set_cost_end ?? 0)
+    const totalCost    = usePeriodCosts
+      ? Number(p.period_total_cost         ?? 0)
+      : cumulTotalCost
 
     return {
       ...row,
@@ -97,7 +113,7 @@ export function mergePerioActuals(rows, periodMap) {
       set_cost_to_date:             setCost,
       total_cost_to_date:           totalCost,
       amount_billed_to_date:        billedToDate,
-      revenue_earned:               revenueEarnedAsOfEnd,
+      revenue_earned:               revenueEarned,
       wip_to_date:                  wipToDate,
       amount_claimed_to_date:       billedToDate + wipToDate,
       invoice_count:                Number(p.period_invoice_count),

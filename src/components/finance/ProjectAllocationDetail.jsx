@@ -17,6 +17,8 @@ function fmtMonth(iso) {
 const SOURCE_STYLES = {
   auto_cost_dialed:   { bg: 'rgba(41,128,185,0.10)',  text: '#1F5E87', label: 'cost' },
   auto_forecast:      { bg: 'rgba(74,140,92,0.10)',   text: '#2E6B3F', label: 'fwd' },
+  auto_single_month:  { bg: 'rgba(74,140,92,0.10)',   text: '#2E6B3F', label: 'single' },
+  pm_forecast:        { bg: 'rgba(20,140,140,0.12)',  text: '#0F6B6B', label: 'pm' },
   manual_override:    { bg: 'rgba(229,122,58,0.18)',  text: '#B8561E', label: 'manual' },
   duration_weighted:  { bg: 'rgba(74,140,92,0.10)',   text: '#2E6B3F', label: 'fwd' },
   default:            { bg: 'transparent',            text: 'inherit',  label: '' },
@@ -77,7 +79,9 @@ function EditableCell({ initialPct, locked, source, onSave }) {
   )
 }
 
-export function ProjectAllocationDetail({ project, months, onEditCell, onRecompute, recomputing }) {
+export function ProjectAllocationDetail({
+  project, months, onEditCell, onToggleActive, onRecompute, recomputing,
+}) {
   // Defensive — months should always be an array
   const monthRows = months ?? []
 
@@ -95,8 +99,34 @@ export function ProjectAllocationDetail({ project, months, onEditCell, onRecompu
     return { billed, wip, earned, earnedKnown }
   }, [monthRows])
 
+  // Ratchet state: compare project's pct_complete to the cumulative_target_pct
+  // of the most recent past or current active month with a target set.
+  const ratchet = useMemo(() => {
+    if (!project) return null
+    const today = new Date().toISOString().slice(0, 10)
+    const pastActive = monthRows
+      .filter(m => m.period_month <= today && m.is_active_month !== false && m.cumulative_target_pct != null)
+    const current = pastActive[pastActive.length - 1]
+    if (!current) return null
+    const target = Number(current.cumulative_target_pct)
+    const actual = Number(project.pct_complete ?? 0)
+    return {
+      target,
+      actual,
+      delta: actual - target,
+      willRatchet: actual > target + 0.005, // tolerance
+      monthLabel: fmtMonth(current.period_month),
+    }
+  }, [monthRows, project])
+
+  const inactiveCount = useMemo(
+    () => monthRows.filter(m => m.is_active_month === false).length,
+    [monthRows]
+  )
+
   if (!project) return null
   const sumOk = Math.abs(sumPct - 1) < 0.005 || sumPct === 0
+  const isMultiMonth = project.date_span_pattern === 'multi_month'
 
   return (
     <>
@@ -134,6 +164,35 @@ export function ProjectAllocationDetail({ project, months, onEditCell, onRecompu
         />
       </div>
 
+      {/* Shape badge + ratchet state */}
+      <div className="flex flex-wrap items-center gap-3 mb-3 text-xs">
+        {project.date_span_pattern && (
+          <span className="inline-block px-2 py-0.5 rounded bg-surface-muted text-charcoal/70 font-medium uppercase tracking-wide text-[10px]">
+            {project.date_span_pattern.replace('_', ' ')}
+          </span>
+        )}
+        {inactiveCount > 0 && (
+          <span className="inline-block px-2 py-0.5 rounded bg-charcoal/10 text-charcoal/70 font-medium text-[10px]">
+            {inactiveCount} inactive month{inactiveCount === 1 ? '' : 's'}
+          </span>
+        )}
+        {ratchet && (
+          <span
+            className="inline-flex items-center gap-2 px-2 py-1 rounded text-[11px]"
+            style={{
+              background: ratchet.willRatchet ? 'rgba(229,122,58,0.10)' : 'rgba(74,140,92,0.10)',
+              color: ratchet.willRatchet ? '#B8561E' : '#2E6B3F',
+            }}
+          >
+            <strong>Through {ratchet.monthLabel}:</strong>
+            PM target {(ratchet.target * 100).toFixed(1)}% · actuals {(ratchet.actual * 100).toFixed(1)}%
+            {ratchet.willRatchet
+              ? <span className="font-semibold">· next nightly will ratchet up</span>
+              : <span>· PM forecast holds</span>}
+          </span>
+        )}
+      </div>
+
       {/* Warning if sum is off */}
       {!sumOk && monthRows.length > 0 && (
         <div className="mb-4 px-3 py-2 rounded-md text-xs"
@@ -156,11 +215,15 @@ export function ProjectAllocationDetail({ project, months, onEditCell, onRecompu
                   Month
                 </th>
                 <th className="text-right px-3 py-[10px] text-[10px] font-bold text-muted uppercase tracking-[0.08em]">Allocated %</th>
+                <th className="text-right px-3 py-[10px] text-[10px] font-bold text-muted uppercase tracking-[0.08em]">Cum Tgt</th>
                 <th className="text-right px-3 py-[10px] text-[10px] font-bold text-muted uppercase tracking-[0.08em]">Allocated $</th>
                 <th className="text-right px-3 py-[10px] text-[10px] font-bold text-muted uppercase tracking-[0.08em]">Billed</th>
                 <th className="text-right px-3 py-[10px] text-[10px] font-bold text-muted uppercase tracking-[0.08em]">WIP</th>
                 <th className="text-right px-3 py-[10px] text-[10px] font-bold text-muted uppercase tracking-[0.08em]">Earned</th>
                 <th className="text-left  px-3 py-[10px] text-[10px] font-bold text-muted uppercase tracking-[0.08em]">Source</th>
+                {isMultiMonth && (
+                  <th className="text-center px-3 py-[10px] text-[10px] font-bold text-muted uppercase tracking-[0.08em]">Active</th>
+                )}
               </tr>
             </thead>
             <tbody>
@@ -168,19 +231,27 @@ export function ProjectAllocationDetail({ project, months, onEditCell, onRecompu
                 const locked = !!m.allocation_is_locked
                 const source = m.allocation_source
                 const tag = SOURCE_STYLES[source]?.label || ''
+                const inactive = m.is_active_month === false
+                const rowClass = inactive
+                  ? 'border-b border-line opacity-50 bg-charcoal/[0.02]'
+                  : 'border-b border-line hover:bg-orange/5'
                 return (
-                  <tr key={m.period_month} className="border-b border-line hover:bg-orange/5">
-                    <td className="px-3 py-2 sticky left-0 bg-surface z-10 whitespace-nowrap font-medium">
+                  <tr key={m.period_month} className={rowClass}>
+                    <td className="px-3 py-2 sticky left-0 z-10 whitespace-nowrap font-medium" style={{ background: inactive ? 'transparent' : 'var(--td-bg, #fff)' }}>
                       {fmtMonth(m.period_month)}
                       {locked && <span className="ml-1 text-muted">🔒</span>}
+                      {inactive && <span className="ml-1 text-[10px] text-muted">inactive</span>}
                     </td>
                     <td className="px-3 py-1.5 w-[110px]">
                       <EditableCell
                         initialPct={m.forecast_pct}
-                        locked={locked}
+                        locked={locked || inactive}
                         source={source}
                         onSave={(v) => onEditCell(m.period_month, v)}
                       />
+                    </td>
+                    <td className="px-3 py-2 text-right font-mono text-xs text-muted">
+                      {m.cumulative_target_pct != null ? `${(Number(m.cumulative_target_pct) * 100).toFixed(1)}%` : '—'}
                     </td>
                     <td className="px-3 py-2 text-right font-mono text-xs">{fmtCurrency(m.forecast_revenue)}</td>
                     <td className="px-3 py-2 text-right font-mono text-xs">{fmtCurrency(m.billed_revenue)}</td>
@@ -201,6 +272,18 @@ export function ProjectAllocationDetail({ project, months, onEditCell, onRecompu
                         </span>
                       ) : <span className="text-muted">—</span>}
                     </td>
+                    {isMultiMonth && (
+                      <td className="px-3 py-2 text-center">
+                        <input
+                          type="checkbox"
+                          checked={!inactive}
+                          disabled={locked || !onToggleActive}
+                          onChange={() => onToggleActive?.(m.period_month, inactive)}
+                          className="accent-orange cursor-pointer disabled:cursor-not-allowed"
+                          title={inactive ? 'Inactive month — no revenue allocated. Click to activate.' : 'Active month. Click to mark inactive (Shape 4 gap).'}
+                        />
+                      </td>
+                    )}
                   </tr>
                 )
               })}
@@ -210,6 +293,7 @@ export function ProjectAllocationDetail({ project, months, onEditCell, onRecompu
                 <td className={`px-3 py-2 text-right font-mono text-xs ${!sumOk ? 'text-[#B8561E]' : ''}`}>
                   {(sumPct * 100).toFixed(1)}%
                 </td>
+                <td className="px-3 py-2"></td> {/* cum tgt column */}
                 <td className="px-3 py-2 text-right font-mono text-xs">
                   {fmtCurrency(monthRows.reduce((a, m) => a + Number(m.forecast_revenue ?? 0), 0))}
                 </td>
@@ -218,7 +302,8 @@ export function ProjectAllocationDetail({ project, months, onEditCell, onRecompu
                 <td className="px-3 py-2 text-right font-mono text-xs">
                   {headlineKpis.earnedKnown ? fmtCurrency(headlineKpis.earned) : <span className="text-muted">—</span>}
                 </td>
-                <td className="px-3 py-2"></td>
+                <td className="px-3 py-2"></td> {/* source column */}
+                {isMultiMonth && <td className="px-3 py-2"></td>} {/* active column */}
               </tr>
             </tbody>
           </table>
@@ -226,12 +311,15 @@ export function ProjectAllocationDetail({ project, months, onEditCell, onRecompu
       )}
 
       {/* Legend */}
-      <div className="flex items-center gap-3 mt-4 text-xs text-muted">
+      <div className="flex flex-wrap items-center gap-3 mt-4 text-xs text-muted">
         <span className="font-semibold uppercase tracking-wider text-[10px]">Cell Source:</span>
+        <Legend swatch={SOURCE_STYLES.pm_forecast}      label="PM forecast" />
+        <Legend swatch={SOURCE_STYLES.auto_forecast}    label="auto forecast" />
         <Legend swatch={SOURCE_STYLES.auto_cost_dialed} label="cost-dialed" />
-        <Legend swatch={SOURCE_STYLES.auto_forecast}    label="forecast" />
-        <Legend swatch={SOURCE_STYLES.manual_override}  label="manual" />
+        <Legend swatch={SOURCE_STYLES.auto_single_month} label="single month" />
+        <Legend swatch={SOURCE_STYLES.manual_override}  label="manual override" />
         <Legend swatch={{ bg: 'rgba(58,46,40,0.08)', text: 'rgba(58,46,40,0.6)' }} label="locked" />
+        <Legend swatch={{ bg: 'rgba(58,46,40,0.04)', text: 'rgba(58,46,40,0.5)' }} label="inactive (Shape 4)" />
       </div>
     </>
   )

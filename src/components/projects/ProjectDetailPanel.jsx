@@ -9,7 +9,7 @@ import { fmtCurrency, fmtPct, fmtRate, fmtHours, fmtDate } from './columns/forma
    - Unified Financials table (Revenue / Costs / Profitability)
    - Job Info, Billing & WIP as dense row sections
 ============================================================ */
-export function ProjectDetailPanel({ project, onClose, onCellEdit }) {
+export function ProjectDetailPanel({ project, onClose, onCellEdit, asOfDate, asOfStart }) {
   const [hideEmpty, setHideEmpty] = useState(true)
 
   useEffect(() => {
@@ -22,6 +22,8 @@ export function ProjectDetailPanel({ project, onClose, onCellEdit }) {
 
   const stageCfg  = STAGE_COLORS[project.stage]           ?? { tone: 'default', dot: 'bg-muted' }
   const statusCfg = PROJECT_STATUS_COLORS[project.project_status] ?? { tone: 'default' }
+  const asOfIso = asOfDate || new Date().toISOString().slice(0, 10)
+  const hasPeriod = !!(asOfStart && asOfDate)
   const addr = [project.job_site_address, project.city, project.state, project.zip_code]
     .filter(Boolean).join(', ')
 
@@ -44,11 +46,20 @@ export function ProjectDetailPanel({ project, onClose, onCellEdit }) {
                              tracking-[-0.01em]">
                 {project.job_name}
               </h2>
-              <div className="mt-3 flex flex-wrap gap-1.5">
+              <div className="mt-3 flex flex-wrap items-center gap-1.5">
                 <Badge tone={stageCfg.tone} dot={stageCfg.dot}>{project.stage}</Badge>
                 {project.project_status && (
                   <Badge tone={statusCfg.tone}>{project.project_status}</Badge>
                 )}
+                <span className="ml-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-sm
+                                 bg-surface-muted border border-line-soft
+                                 text-[10.5px] font-semibold uppercase tracking-[0.06em] text-muted"
+                      title={hasPeriod ? 'Values reflect activity within this period only' : 'Cost-to-date values reflect this date'}>
+                  <CalendarIcon />
+                  {hasPeriod
+                    ? `${fmtDate(asOfStart)} – ${fmtDate(asOfIso)}`
+                    : `As of ${fmtDate(asOfIso)}`}
+                </span>
               </div>
             </div>
             <div className="flex gap-1 flex-shrink-0">
@@ -327,21 +338,57 @@ const ACTUALS_BG_DEEP = 'bg-[#E3EBF3]'
 const ACTUALS_FG      = 'text-[#2B5A82]'
 
 /**
- * Editable cell for percentage-over-under inputs.
- * Storage: fraction (0.05 = 5% over, -0.10 = 10% under).
- * Display/edit: percent number (5, -10).
- * Empty input → null (revert to "no override / 0%").
+ * Editable cell for over/under inputs expressed as an ABSOLUTE delta.
+ *
+ * Storage:  fraction `pct` on `projects.pct_over_under_*` (unchanged backend math)
+ * Edit:     PM types the signed delta in the same units as `forecast` (hours or dollars).
+ *           Save converts: pct = delta / forecast.
+ * Display:  shows signed absolute delta (forecast × pct), formatted per `unit`.
+ *
+ * Examples:
+ *   - Hours, forecast=80, pct=0.80   → display "+64h"   (PM types `+64`, saves 0.80)
+ *   - Materials, forecast=$1,723, pct=−0.213 → display "−$367" (PM types `-367`, saves −0.213)
+ *
+ * If forecast is 0/null, no math is possible — cell is read-only and shows "—".
  */
-function EditablePctCell({ value, bg, onSave }) {
+function EditableDeltaCell({ value, bg, onSave, forecast, unit = 'currency' }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState('')
   const inputRef = useRef(null)
   const cellRef = useRef(null)
 
+  const fc = Number(forecast)
+  const fcUsable = isFinite(fc) && fc !== 0
+  const delta = (value == null || !fcUsable) ? null : Number(value) * fc
+
+  const fmtDelta = (n) => {
+    if (n == null) return '—'
+    const sign = n > 0 ? '+' : n < 0 ? '−' : ''
+    const abs = Math.abs(n)
+    if (unit === 'hours') {
+      // Hours: 1 decimal if non-integer, else integer; suffix "h"
+      const num = abs >= 100 ? Math.round(abs) : Math.round(abs * 10) / 10
+      return `${sign}${num}h`
+    }
+    // Currency: no decimals when |n| ≥ 100, else 2 decimals
+    const formatted = abs >= 100
+      ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(abs)
+      : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(abs)
+    return `${sign}${formatted}`
+  }
+
   const startEdit = useCallback(() => {
-    setDraft(value == null ? '' : String((Number(value) * 100).toFixed(1).replace(/\.0$/, '')))
+    if (!fcUsable) return
+    // Pre-fill input with the absolute delta (e.g., "64", "-367") — no unit suffix
+    if (delta == null) setDraft('')
+    else {
+      const rounded = unit === 'hours'
+        ? (Math.abs(delta) >= 100 ? Math.round(delta) : Math.round(delta * 10) / 10)
+        : (Math.abs(delta) >= 100 ? Math.round(delta) : Math.round(delta * 100) / 100)
+      setDraft(String(rounded))
+    }
     setEditing(true)
-  }, [value])
+  }, [delta, fcUsable, unit])
 
   useEffect(() => {
     if (editing && inputRef.current) {
@@ -352,15 +399,20 @@ function EditablePctCell({ value, bg, onSave }) {
 
   const commit = useCallback(() => {
     setEditing(false)
-    if (draft === '') {
+    if (draft === '' || draft === '-' || draft === '+') {
       if (value != null) onSave(null)
       return
     }
-    const n = Number(draft)
-    if (Number.isNaN(n)) return
-    const fraction = Math.round((n / 100) * 10000) / 10000 // 4 decimal places (= 0.01% precision)
+    const d = Number(draft)
+    if (Number.isNaN(d) || !fcUsable) return
+    if (d === 0) {
+      if (value != null) onSave(null) // typing 0 clears the override
+      return
+    }
+    // Convert absolute delta → fraction. 4 decimal precision matches prior behavior.
+    const fraction = Math.round((d / fc) * 10000) / 10000
     if (fraction !== value) onSave(fraction)
-  }, [draft, value, onSave])
+  }, [draft, value, onSave, fc, fcUsable])
 
   if (editing) {
     return (
@@ -368,7 +420,7 @@ function EditablePctCell({ value, bg, onSave }) {
         <input
           ref={inputRef}
           type="number"
-          step="0.5"
+          step={unit === 'hours' ? '0.5' : '1'}
           value={draft}
           onChange={e => setDraft(e.target.value)}
           onBlur={commit}
@@ -382,25 +434,27 @@ function EditablePctCell({ value, bg, onSave }) {
     )
   }
 
-  const empty = value == null
-  const pct = empty ? 0 : Number(value) * 100
-  const display = empty ? '—' : `${pct > 0 ? '+' : ''}${pct.toFixed(1)}%`
+  const empty = delta == null || !fcUsable
+  const display = fmtDelta(delta)
   const tone = empty
     ? 'text-[#C0C0C0]'
-    : pct > 0 ? 'text-[#B8561E] font-semibold' // over budget
-    : pct < 0 ? 'text-[#2E6B3F] font-semibold' // under budget
+    : delta > 0 ? 'text-[#B8561E] font-semibold' // over forecast — red
+    : delta < 0 ? 'text-[#2E6B3F] font-semibold' // under forecast — green
     : 'text-charcoal/60'
 
   return (
     <div
       ref={cellRef}
-      onClick={startEdit}
-      className={`py-[9px] px-2 text-right font-mono text-[12px] cursor-pointer
+      onClick={fcUsable ? startEdit : undefined}
+      className={`py-[9px] px-2 text-right font-mono text-[12px] ${fcUsable ? 'cursor-pointer' : 'cursor-not-allowed'}
                   bg-white shadow-[inset_0_0_0_1px_rgba(229,122,58,0.25)]
-                  hover:shadow-[inset_0_0_0_1.5px_rgba(229,122,58,0.55)]
+                  ${fcUsable ? 'hover:shadow-[inset_0_0_0_1.5px_rgba(229,122,58,0.55)]' : ''}
                   ${tone} ${bg || ''}`}
       style={{ fontVariantNumeric: 'tabular-nums' }}
-      title="Click to edit % over/under (e.g., 5 = 5% over, -10 = 10% under). Empty = on forecast."
+      title={fcUsable
+        ? (unit === 'hours' ? 'Type signed hours over/under forecast (e.g., 64 = +64h, -25 = under by 25h). Empty = on forecast.'
+                            : 'Type signed dollars over/under forecast (e.g., 500 = +$500, -367 = under by $367). Empty = on forecast.')
+        : 'No forecast value — set the forecast first to enable over/under.'}
     >
       {display}
     </div>
@@ -559,7 +613,11 @@ function FinancialsTable({ project: p, onCellEdit }) {
   const Line = ({ label, forecast, toDate, remaining, atComp, pctRev,
                   fmt = fmtCurrency, emphasis, sub,
                   forecastField, forecastOverridden,
-                  pctField, pctValue }) => (
+                  pctField, pctValue,
+                  /** signal to EditableDeltaCell what unit to format / accept */
+                  pctUnit = 'currency',
+                  /** override the value used to convert pct↔delta — defaults to `forecast` */
+                  pctForecast }) => (
     <>
       <Label emphasis={emphasis} sub={sub}>{label}</Label>
       {forecastField && onCellEdit ? (
@@ -579,8 +637,10 @@ function FinancialsTable({ project: p, onCellEdit }) {
       <Cell value={toDate == null ? null : fmt(toDate)}     emphasis={emphasis}
             bg={emphasis ? ACTUALS_BG_DEEP : ACTUALS_BG} fg={ACTUALS_FG} />
       {pctField && onCellEdit ? (
-        <EditablePctCell
+        <EditableDeltaCell
           value={pctValue}
+          forecast={pctForecast ?? forecast}
+          unit={pctUnit}
           onSave={v => onCellEdit(p.po_number, pctField, v)}
         />
       ) : (
@@ -606,7 +666,7 @@ function FinancialsTable({ project: p, onCellEdit }) {
           <div className="px-3 py-2.5">&nbsp;</div>
           <div className={`px-2.5 py-2.5 text-right ${FORECAST_BG} ${FORECAST_FG}`}>Forecast</div>
           <div className={`px-2.5 py-2.5 text-right ${ACTUALS_BG} ${ACTUALS_FG}`}>To Date</div>
-          <div className="px-2 py-2.5 text-right" title="Manual % over/under forecast">% O/U</div>
+          <div className="px-2 py-2.5 text-right" title="Manual over/under forecast (hours or dollars). Click to edit.">+/− O/U</div>
           <div className={`px-2.5 py-2.5 text-right ${ACTUALS_BG} ${ACTUALS_FG}`}>Remaining</div>
           <div className="px-2.5 py-2.5 text-right">Projected</div>
           <div className="px-2 py-2.5 text-right">% Rev</div>
@@ -616,7 +676,12 @@ function FinancialsTable({ project: p, onCellEdit }) {
       {/* REVENUE */}
       <SectionBar meta={fmtCurrency(total_rev)}>Revenue</SectionBar>
       <Line label="Contract"      forecast={contract_rev} atComp={contract_rev} />
-      <Line label="Change Order"  forecast={co_rev}       atComp={co_rev} />
+      <Line label="Change Order"
+            forecast={co_rev}
+            atComp={p.forecasted_co_revenue ?? co_rev}
+            pctField="pct_over_under_co"
+            pctValue={p.pct_over_under_co}
+            pctForecast={contract_rev} />
       <Line label="Total Revenue" forecast={total_rev}    atComp={total_rev} emphasis />
 
       {/* COSTS */}
@@ -627,6 +692,7 @@ function FinancialsTable({ project: p, onCellEdit }) {
             remaining={p.est_hours_remaining}
             pctField="pct_over_under_hours"
             pctValue={p.pct_over_under_hours}
+            pctUnit="hours"
             atComp={p.total_project_hours}
             fmt={fmtHours} />
       <Line label="Labor"
@@ -706,7 +772,8 @@ const XIcon     = () => <Svg><path d="M6 6l12 12M18 6L6 18"/></Svg>
 const PinIcon   = () => <Svg><path d="M12 2v7M8 9h8l-1 5H9L8 9zM12 14v8"/></Svg>
 const CopyIcon  = () => <Svg size={12}><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/></Svg>
 const CheckIcon = () => <Svg size={12}><path d="M5 12l5 5L20 7"/></Svg>
-const ExtIcon   = () => <Svg size={14}><path d="M14 3h7v7"/><path d="M10 14L21 3"/><path d="M21 14v5a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h5"/></Svg>
+const ExtIcon      = () => <Svg size={14}><path d="M14 3h7v7"/><path d="M10 14L21 3"/><path d="M21 14v5a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h5"/></Svg>
+const CalendarIcon = () => <Svg size={11}><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/></Svg>
 const ChevIcon  = ({ open }) => (
   <span className="text-muted transition-transform duration-200"
         style={{ transform: open ? 'rotate(90deg)' : 'rotate(0deg)' }}>

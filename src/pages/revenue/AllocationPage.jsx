@@ -2,10 +2,16 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { KpiCard, Button } from '../../components/ui'
 import { MultiSelectDropdown } from '../../components/ui/MultiSelectDropdown'
 import { AllocationGrid, ALLOCATION_COLUMNS } from '../../components/finance/AllocationGrid'
+import { AllocationDetailPanel } from '../../components/finance/AllocationDetailPanel'
 import { ColumnsDropdown } from '../../components/finance/ColumnsDropdown'
 import { useTablePrefs } from '../../components/finance/useTablePrefs'
-import { getAllocationProjects, getFinanceFilterOptions } from '../../lib/finance/queries'
-import { recomputeAllOpenAllocations } from '../../lib/finance/actions'
+import { getAllocationProjects, getFinanceFilterOptions, getProjectAllocation } from '../../lib/finance/queries'
+import {
+  recomputeAllOpenAllocations,
+  recomputeAllocation,
+  setPmForecastAllocation,
+  setMonthActive,
+} from '../../lib/finance/actions'
 import { useAuth } from '../../contexts/AuthContext'
 
 const DEFAULT_VISIBILITY = {} // show all by default
@@ -37,6 +43,91 @@ export function AllocationPage() {
 
   const [batchRunning, setBatchRunning] = useState(false)
   const [batchResult, setBatchResult] = useState(null)
+
+  // Slide-over panel state
+  const [panelPo, setPanelPo]             = useState(null)
+  const [panelProject, setPanelProject]   = useState(null)
+  const [panelMonths, setPanelMonths]     = useState([])
+  const [panelLoading, setPanelLoading]   = useState(false)
+  const [panelRecomputing, setPanelRecomputing] = useState(false)
+
+  // Load detail when a row is clicked
+  useEffect(() => {
+    if (!panelPo) return
+    let cancelled = false
+    setPanelLoading(true)
+    setPanelProject(null)
+    setPanelMonths([])
+    getProjectAllocation(panelPo)
+      .then(({ project, months }) => {
+        if (!cancelled) { setPanelProject(project); setPanelMonths(months) }
+      })
+      .catch(e => { if (!cancelled) setBatchResult({ ok: false, msg: e?.message || String(e) }) })
+      .finally(() => { if (!cancelled) setPanelLoading(false) })
+    return () => { cancelled = true }
+  }, [panelPo])
+
+  async function refetchPanel() {
+    if (!panelPo) return
+    try {
+      const { project, months } = await getProjectAllocation(panelPo)
+      setPanelProject(project)
+      setPanelMonths(months)
+    } catch (e) {
+      setBatchResult({ ok: false, msg: e?.message || String(e) })
+    }
+  }
+
+  async function handlePanelEditCell(period_month, pctNumber0to100) {
+    try {
+      await setPmForecastAllocation({
+        po_number: panelPo,
+        period_month,
+        allocated_pct: pctNumber0to100,
+        total_revenue: panelProject?.total_revenue ?? 0,
+        acting_user: user?.id ?? null,
+      })
+      await refetchPanel()
+      // Also refresh the list so summary columns update
+      refetch()
+    } catch (e) {
+      const msg = e?.message || String(e)
+      const friendly = msg.includes('lock') ? 'That month is locked — reopen first.' : msg
+      setBatchResult({ ok: false, msg: friendly })
+      setTimeout(() => setBatchResult(null), 4000)
+    }
+  }
+
+  async function handlePanelToggleActive(period_month, currentlyInactive) {
+    try {
+      await setMonthActive({
+        po_number: panelPo,
+        period_month,
+        is_active_month: currentlyInactive,
+        acting_user: user?.id ?? null,
+      })
+      await refetchPanel()
+      refetch()
+    } catch (e) {
+      setBatchResult({ ok: false, msg: e?.message || String(e) })
+      setTimeout(() => setBatchResult(null), 4000)
+    }
+  }
+
+  async function handlePanelRecompute() {
+    if (!panelPo) return
+    setPanelRecomputing(true)
+    try {
+      await recomputeAllocation(panelPo, user?.id ?? null, false)
+      await refetchPanel()
+      refetch()
+    } catch (e) {
+      setBatchResult({ ok: false, msg: e?.message || String(e) })
+      setTimeout(() => setBatchResult(null), 4000)
+    } finally {
+      setPanelRecomputing(false)
+    }
+  }
 
   // Search (debounced)
   const [search, setSearch] = useState('')
@@ -327,8 +418,22 @@ export function AllocationPage() {
             onColumnSizingChange={(s) => patchPrefs({ columnSizing: s })}
             sorting={prefs.sorting}
             onSortingChange={(s) => patchPrefs({ sorting: s })}
+            onRowClick={(row) => setPanelPo(row.po_number)}
           />
       }
+
+      {(panelPo) && (
+        <AllocationDetailPanel
+          project={panelProject}
+          months={panelMonths}
+          loading={panelLoading}
+          onClose={() => { setPanelPo(null); setPanelProject(null); setPanelMonths([]) }}
+          onEditCell={handlePanelEditCell}
+          onToggleActive={handlePanelToggleActive}
+          onRecompute={handlePanelRecompute}
+          recomputing={panelRecomputing}
+        />
+      )}
 
       {batchResult && (
         <div

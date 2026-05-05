@@ -49,6 +49,7 @@ const NAV_ITEMS = [
       { to: '/finance', label: 'Dashboard' },
       { to: '/finance/wip', label: 'Unbilled' },
       { to: '/finance/billing', label: 'Billing' },
+      { to: '/finance/wip-schedule', label: 'WIP Schedule' },
       { to: '/finance/close', label: 'Month Close' },
     ],
   },

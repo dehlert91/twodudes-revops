@@ -9,6 +9,7 @@ import { LoginPage } from './pages/LoginPage'
 import { FinanceDashboardPage } from './pages/finance/FinanceDashboardPage'
 import { WipPage } from './pages/finance/WipPage'
 import { MonthClosePage } from './pages/finance/MonthClosePage'
+import { WipSchedulePage } from './pages/finance/WipSchedulePage'
 import { BillingPage } from './pages/finance/BillingPage'
 import { InvoiceHistoryPage } from './pages/finance/InvoiceHistoryPage'
 import { AllocationPage } from './pages/revenue/AllocationPage'
@@ -45,6 +46,7 @@ export default function App() {
             <Route path="finance/wip"            element={<WipPage />} />
             <Route path="finance/billing"        element={<BillingPage />} />
             <Route path="finance/close"          element={<MonthClosePage />} />
+            <Route path="finance/wip-schedule"   element={<WipSchedulePage />} />
             <Route path="finance/invoices/:po"   element={<InvoiceHistoryPage />} />
             {/* Legacy aliases */}
             <Route path="finance/progress-billing" element={<Navigate to="/finance/billing" replace />} />

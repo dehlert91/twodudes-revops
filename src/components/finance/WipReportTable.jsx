@@ -79,10 +79,16 @@ function ActionsCell({ row, onAction }) {
       {open && pos && (
         <div
           ref={menuRef}
-          style={{ position: 'fixed', top: pos.top, left: pos.left, width: 160 }}
+          style={{ position: 'fixed', top: pos.top, left: pos.left, width: 180 }}
           className="z-[100] bg-surface border border-line rounded-md shadow-elevated py-1 flex flex-col"
           onClick={(e) => e.stopPropagation()}
         >
+          <button
+            onClick={() => pick('final_invoice')}
+            className="w-full text-left px-3 py-1.5 text-xs hover:bg-surface-subtle"
+          >
+            Final Invoice
+          </button>
           <button
             onClick={() => pick('progress_bill')}
             className="w-full text-left px-3 py-1.5 text-xs hover:bg-surface-subtle"
@@ -90,13 +96,10 @@ function ActionsCell({ row, onAction }) {
             Progress Billing
           </button>
           <button
-            onClick={() => row.wip_eligible && pick('add_wip')}
-            disabled={!row.wip_eligible}
-            title={row.wip_eligible ? '' : 'WIP-eligible billing schedule not set on this project.'}
-            className={`w-full text-left px-3 py-1.5 text-xs ${row.wip_eligible ? 'hover:bg-surface-subtle text-charcoal' : 'text-muted cursor-not-allowed'}`}
+            onClick={() => pick('add_wip')}
+            className="w-full text-left px-3 py-1.5 text-xs hover:bg-surface-subtle text-charcoal"
           >
             Add to WIP
-            {!row.wip_eligible && <span className="ml-1 text-[10px] text-muted/70">(not eligible)</span>}
           </button>
         </div>
       )}

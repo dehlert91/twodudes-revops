@@ -6,7 +6,8 @@ import { ColumnsDropdown } from '../../components/finance/ColumnsDropdown'
 import { useWipViews } from '../../hooks/useWipViews'
 import { ProjectDetailPanel } from '../../components/projects/ProjectDetailPanel'
 import { getWipProjects, getFinanceFilterOptions, getProjectByPo } from '../../lib/finance/queries'
-import { addBillingDraft } from '../../lib/finance/billingDrafts'
+import { addCloseQueueItem } from '../../lib/finance/closeQueue'
+import { useAuth } from '../../contexts/AuthContext'
 import { getProjectPeriodActuals, mergePerioActuals } from '../../lib/finance/period'
 import { DateRangePicker } from '../../components/ui/DateRangePicker'
 import { updateProject } from '../../lib/supabase'
@@ -47,9 +48,13 @@ export function WipPage() {
   const [error, setError] = useState(null)
   const [opts, setOpts] = useState({ divisions: [], segments: [] })
   const [actionMsg, setActionMsg] = useState(null)
+  // Close-queue draft modal state. `progressBillRow` is the project row being drafted;
+  // `progressBillKind` is one of 'invoice' | 'progress' | 'wip'.
   const [progressBillRow, setProgressBillRow]       = useState(null)
+  const [progressBillKind, setProgressBillKind]     = useState('progress')
   const [progressBillAmount, setProgressBillAmount] = useState('')
   const [progressBillNote, setProgressBillNote]     = useState('')
+  const { user } = useAuth()
   const periodMapRef = useRef(null)
 
   // ── Views ──────────────────────────────────────────────────────────────────
@@ -267,7 +272,7 @@ export function WipPage() {
         if (periodActive) {
           const periodMap = await getProjectPeriodActuals(dateRange.start, dateRange.end)
           periodMapRef.current = periodMap
-          return mergePerioActuals(baseRows, periodMap)
+          return mergePerioActuals(baseRows, periodMap, { usePeriodCosts: true })
         }
         periodMapRef.current = null
         return baseRows
@@ -321,7 +326,7 @@ export function WipPage() {
         // If a date range is active, overlay period-adjusted values so the panel
         // reflects the same data as the table row rather than today's snapshot.
         if (periodMapRef.current) {
-          const [merged] = mergePerioActuals([full], periodMapRef.current)
+          const [merged] = mergePerioActuals([full], periodMapRef.current, { usePeriodCosts: true })
           setSelectedProject(merged)
         } else {
           setSelectedProject(full)
@@ -355,27 +360,52 @@ export function WipPage() {
   function handleAction(kind, row) {
     if (kind === 'progress_bill') {
       setProgressBillRow(row)
+      setProgressBillKind('progress')
+      setProgressBillAmount(row.unbilled_revenue ? String(Math.round(row.unbilled_revenue)) : '')
+      setProgressBillNote('')
+    } else if (kind === 'final_invoice') {
+      setProgressBillRow(row)
+      setProgressBillKind('invoice')
       setProgressBillAmount(row.unbilled_revenue ? String(Math.round(row.unbilled_revenue)) : '')
       setProgressBillNote('')
     } else if (kind === 'add_wip') {
-      setActionMsg(`WIP entry for PO ${row.po_number} (${fmtCurrency(row.costs_in_excess_of_billings)}) — backend not wired.`)
-      setTimeout(() => setActionMsg(null), 4000)
+      setProgressBillRow(row)
+      setProgressBillKind('wip')
+      // Default WIP amount to costs-in-excess-of-billings (the under-billed portion)
+      setProgressBillAmount(row.costs_in_excess_of_billings ? String(Math.round(row.costs_in_excess_of_billings)) : '')
+      setProgressBillNote('')
     }
   }
 
-  function handleProgressBillSubmit() {
+  // Default close period = first day of previous month (typical close cadence)
+  function defaultPeriodMonth() {
+    const d = new Date()
+    return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() - 1, 1)).toISOString().slice(0, 10)
+  }
+
+  async function handleProgressBillSubmit() {
     const amount = parseFloat(progressBillAmount.replace(/[^0-9.-]/g, ''))
     if (!isNaN(amount) && amount > 0) {
-      addBillingDraft({
-        po_number: progressBillRow.po_number,
-        job_name:  progressBillRow.job_name,
-        amount,
-        notes:     progressBillNote.trim(),
-      })
-      setActionMsg(`Progress bill of ${fmtCurrency(amount)} added to billing queue for PO ${progressBillRow.po_number}.`)
+      try {
+        await addCloseQueueItem({
+          po_number:    progressBillRow.po_number,
+          job_name:     progressBillRow.job_name,
+          customer:     progressBillRow.customer,
+          kind:         progressBillKind,
+          amount,
+          notes:        progressBillNote.trim(),
+          period_month: defaultPeriodMonth(),
+          drafted_by:   user?.id ?? null,
+        })
+        const label = progressBillKind === 'invoice' ? 'Final invoice' : progressBillKind === 'wip' ? 'WIP entry' : 'Progress bill'
+        setActionMsg(`${label} of ${fmtCurrency(amount)} added to close queue for PO ${progressBillRow.po_number}.`)
+      } catch (e) {
+        setActionMsg(`Failed to add to queue: ${e?.message || String(e)}`)
+      }
       setTimeout(() => setActionMsg(null), 4000)
     }
     setProgressBillRow(null)
+    setProgressBillKind('progress')
     setProgressBillAmount('')
     setProgressBillNote('')
   }
@@ -668,6 +698,8 @@ export function WipPage() {
           project={selectedProject}
           onClose={() => setSelectedProject(null)}
           onCellEdit={handleCellEdit}
+          asOfDate={dateRange.start && dateRange.end ? dateRange.end : undefined}
+          asOfStart={dateRange.start && dateRange.end ? dateRange.start : undefined}
         />
       )}
 
@@ -675,7 +707,11 @@ export function WipPage() {
       {progressBillRow && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/30">
           <div className="bg-surface border border-line rounded-lg shadow-elevated p-6 w-[420px] max-w-[95vw]">
-            <h2 className="font-display text-lg font-bold text-charcoal mb-0.5">Progress Billing</h2>
+            <h2 className="font-display text-lg font-bold text-charcoal mb-0.5">
+              {progressBillKind === 'invoice'  ? 'Final Invoice'  :
+               progressBillKind === 'wip'      ? 'Add to WIP Schedule' :
+               'Progress Billing'}
+            </h2>
             <p className="text-xs text-muted mb-4 font-mono">{progressBillRow.po_number} — {progressBillRow.job_name}</p>
 
             <div className="grid grid-cols-2 gap-3 mb-5 text-xs">
